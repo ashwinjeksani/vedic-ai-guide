@@ -114,7 +114,16 @@ export async function chat(req, res) {
   }
 
   // Layer 3: the server-owned prompt (+ reply-language instruction).
-  const system = SYSTEM_PROMPT + (LANG_REPLY_INSTRUCTION[lang] || "");
+  const langInstruction = LANG_REPLY_INSTRUCTION[lang] || "";
+  // For OpenAI we still send a single system string.
+  const system = SYSTEM_PROMPT + langInstruction;
+  // For Anthropic we send content blocks so we can cache the (identical-on-every-
+  // request) SYSTEM_PROMPT prefix. cache_control marks the cache breakpoint; the
+  // per-language instruction sits AFTER it so it stays out of the cached prefix.
+  const anthropicSystem = [
+    { type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } },
+    ...(langInstruction ? [{ type: "text", text: langInstruction }] : []),
+  ];
 
   let upstream, payloadOut, headers;
 
@@ -131,7 +140,7 @@ export async function chat(req, res) {
       payloadOut = {
         model: MODELS.anthropic,
         max_tokens: MAX_TOKENS,
-        system,
+        system: anthropicSystem,
         messages,
       };
     } else {
@@ -163,6 +172,16 @@ export async function chat(req, res) {
 
     if (!upstreamRes.ok) {
       return res.status(502).json({ error: "upstream_error", detail: data });
+    }
+
+    // Verify prompt caching: cache_read > 0 means the SYSTEM_PROMPT prefix was
+    // served from cache (~0.1x cost). Zero across repeated requests → a silent
+    // invalidator or a prefix below the model's cacheable minimum.
+    if (provider === "anthropic" && data.usage) {
+      const u = data.usage;
+      console.log(
+        `[cache] write=${u.cache_creation_input_tokens || 0} read=${u.cache_read_input_tokens || 0} input=${u.input_tokens || 0}`
+      );
     }
 
     // Normalize both providers to Anthropic's { content: [{type:'text', text}] } shape.
