@@ -1,7 +1,12 @@
-# Render Blueprint — deploys the Sanatana app as one web service.
+# Render Blueprint — deploys the Sanatana app as one web service (free tier).
 #
-# The build compiles the Vite frontend, copies it into server/../public,
-# installs server deps, and initializes the SQLite schema on the persistent disk.
+# The build compiles the Vite frontend, copies it into ./public, and installs
+# server deps. The server creates the SQLite schema on startup at DB_PATH.
+#
+# NOTE: free tier has no persistent disk, so the SQLite DB lives on the
+# ephemeral filesystem (/tmp) and RESETS on every restart/redeploy — accounts,
+# allowlist, and guest counts do not persist. For durable data, switch to
+# plan: starter and add a disk (mountPath: /var/data, DB_PATH there).
 #
 # After first deploy, set the secret env vars in the Render dashboard
 # (they are intentionally marked sync:false so they are NOT stored in git).
@@ -15,17 +20,12 @@ services:
       npm --prefix frontend install && npm --prefix frontend run build
       rm -rf server/../public && mkdir -p public && cp -r frontend/dist/* public/
       npm --prefix server install
-      DB_PATH=/var/data/sanatana.db npm --prefix server run init-db
     startCommand: node server/index.js
-    disk:
-      name: data
-      mountPath: /var/data
-      sizeGB: 1
     envVars:
       - key: NODE_ENV
         value: production
       - key: DB_PATH
-        value: /var/data/sanatana.db
+        value: /tmp/sanatana.db   # ephemeral: SQLite resets on restart/redeploy (free tier, no disk)
       - key: PORT
         value: "10000"
       - key: GUEST_DAILY_LIMIT
