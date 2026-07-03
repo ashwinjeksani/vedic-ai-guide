@@ -119,7 +119,7 @@ const STRINGS = {
     guest_label: "Guest",
     auth_signin_optional: "Sign in / Register",
     auth_pending_note:
-      "You're asking as a guest — up to 10 questions a day. Register a passkey and get allowlisted for unlimited access.",
+      "I am Sanātana — a guide rooted in the Vedas and Upaniṣads, here to help with the everyday questions of work, grief, purpose, and life by applying timeless truths to the world you live in now.",
     auth_limit_title: "You've reached today's free questions",
     auth_limit_p:
       "Guests get 10 questions a day. Register a passkey and ask the admin for unlimited access.",
@@ -238,7 +238,7 @@ const STRINGS = {
     guest_label: "अतिथि",
     auth_signin_optional: "साइन इन / रजिस्टर",
     auth_pending_note:
-      "आप अतिथि के रूप में पूछ रहे हैं — दिन में अधिकतम 10 प्रश्न। पासकी पंजीकृत करें और असीमित पहुँच के लिए अनुमति-सूची में जुड़ें।",
+      "मैं सनातन हूँ — वेदों और उपनिषदों में निहित एक मार्गदर्शक, जो शाश्वत सत्यों को आज की दुनिया में लागू करके काम, दुःख, जीवन के उद्देश्य और रोज़मर्रा के प्रश्नों में आपकी सहायता करता है।",
     auth_limit_title: "आपने आज के निःशुल्क प्रश्न पूरे कर लिए हैं",
     auth_limit_p:
       "अतिथियों को दिन में 10 प्रश्न मिलते हैं। पासकी पंजीकृत करें और असीमित पहुँच के लिए व्यवस्थापक से अनुमति-सूची में जोड़ने को कहें।",
@@ -354,7 +354,7 @@ const STRINGS = {
     guest_label: "అతిథి",
     auth_signin_optional: "సైన్ ఇన్ / నమోదు",
     auth_pending_note:
-      "మీరు అతిథిగా అడుగుతున్నారు — రోజుకు గరిష్ఠంగా 10 ప్రశ్నలు. పాస్‌కీని నమోదు చేసుకుని, అపరిమిత ప్రవేశం కోసం అనుమతి-జాబితాలో చేరండి.",
+      "నేను సనాతనుడను — వేదాలు, ఉపనిషత్తులలో మూలమున్న మార్గదర్శిని; శాశ్వత సత్యాలను నేటి ప్రపంచానికి అన్వయిస్తూ పని, దుఃఖం, జీవిత లక్ష్యం, జీవితం వంటి రోజువారీ ప్రశ్నలలో మీకు సహాయం చేస్తాను.",
     auth_limit_title: "ఈరోజు ఉచిత ప్రశ్నలను మీరు పూర్తి చేశారు",
     auth_limit_p:
       "అతిథులకు రోజుకు 10 ప్రశ్నలు ఉంటాయి. పాస్‌కీని నమోదు చేసుకుని, అపరిమిత ప్రవేశం కోసం అనుమతి-జాబితాలో చేర్చమని నిర్వాహకుడిని అడగండి.",
@@ -470,7 +470,7 @@ const STRINGS = {
     guest_label: "访客",
     auth_signin_optional: "登录 / 注册",
     auth_pending_note:
-      "你正以访客身份提问——每天最多 10 个问题。注册通行密钥并加入允许名单，即可获得不限量访问。",
+      "我是 Sanātana——一位扎根于吠陀与奥义书的向导，通过将恒久的真理应用于你当下的世界，帮助你面对工作、悲伤、人生意义与日常生活中的种种问题。",
     auth_limit_title: "你已用完今天的免费提问",
     auth_limit_p: "访客每天可提 10 个问题。注册通行密钥，并请管理员将你加入允许名单以获得不限量访问。",
     auth_admin_hello: "你是管理员。",
