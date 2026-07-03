@@ -160,6 +160,8 @@ const STRINGS = {
     // footer
     footer_p:
       "Sanātana interprets; it does not pronounce. Schools of Vedānta disagree with one another, scholars dispute dates and readings, and the guide will tell you when they do. Where the texts say the same Self dwells in all beings, that is where this guide stands.",
+    footer_caution:
+      "A gentle note: this guide is for the ordinary person seeking steadiness in daily life — not a platform for political or religious partisanship. Its answers draw on authentic texts and on the language model behind it; most arrive with citations you can check, yet an occasional mistaken reference can slip through, if rarely. Read it as a starting point, and verify what matters.",
     footer_fine: "śruti · smṛti · viveka — built with three.js & Claude",
   },
 
@@ -274,6 +276,8 @@ const STRINGS = {
 
     footer_p:
       "सनातन व्याख्या करता है; घोषणा नहीं करता। वेदांत के विभिन्न सम्प्रदाय आपस में असहमत हैं, विद्वान तिथियों और पाठों पर विवाद करते हैं, और मार्गदर्शक आपको बताएगा कि कब। जहाँ ग्रंथ कहते हैं कि वही एक आत्मा सभी प्राणियों में वास करती है, वहीं यह मार्गदर्शक खड़ा है।",
+    footer_caution:
+      "एक विनम्र सूचना: यह मार्गदर्शक उस साधारण व्यक्ति के लिए है जो दैनिक जीवन में स्थिरता खोज रहा है — किसी राजनीतिक या धार्मिक पक्षधरता का मंच नहीं। इसके उत्तर प्रामाणिक ग्रंथों और इसके पीछे के भाषा-मॉडल पर आधारित हैं; अधिकांश के साथ ऐसे संदर्भ होते हैं जिन्हें आप जाँच सकते हैं, फिर भी कभी-कभार कोई ग़लत संदर्भ आ सकता है, यद्यपि विरले ही। इसे एक शुरुआत मानें, और जो महत्वपूर्ण हो उसे स्वयं सत्यापित करें।",
     footer_fine: "श्रुति · स्मृति · विवेक — three.js और Claude से निर्मित",
   },
 
@@ -388,6 +392,8 @@ const STRINGS = {
 
     footer_p:
       "సనాతన వ్యాఖ్యానిస్తుంది; ప్రకటించదు. వేదాంత సంప్రదాయాలు ఒకదానితో ఒకటి విభేదిస్తాయి, పండితులు తేదీలు, పాఠాలపై వాదిస్తారు, ఎప్పుడు అలా జరిగిందో మార్గదర్శిని చెబుతుంది. అదే ఒక్క ఆత్మ సకల ప్రాణుల్లో వసిస్తుందని గ్రంథాలు చెప్పే చోటే ఈ మార్గదర్శిని నిలుస్తుంది.",
+    footer_caution:
+      "ఒక మృదువైన గమనిక: ఈ మార్గదర్శి రోజువారీ జీవితంలో స్థిరత్వాన్ని వెతుకుతున్న సాధారణ వ్యక్తి కోసం — ఇది రాజకీయ లేదా మతపరమైన పక్షపాతానికి వేదిక కాదు. దీని సమాధానాలు ప్రామాణిక గ్రంథాలపైనా, దాని వెనుక ఉన్న భాషా నమూనాపైనా ఆధారపడతాయి; చాలావరకు మీరు తనిఖీ చేయగల ఆధారాలతో వస్తాయి, అయినా అప్పుడప్పుడు ఒక తప్పు సూచన దొర్లవచ్చు, అరుదుగానే అయినా. దీన్ని ఒక ప్రారంభంగా భావించి, ముఖ్యమైనదాన్ని మీరే నిర్ధారించుకోండి.",
     footer_fine: "శ్రుతి · స్మృతి · వివేక — three.js మరియు Claudeతో నిర్మించబడింది",
   },
 
@@ -501,6 +507,8 @@ const STRINGS = {
 
     footer_p:
       "Sanātana 只作诠释，不作裁断。吠檀多各派彼此不合，学者们对年代与读法争论不休，向导会告诉你何处如此。典籍说同一自我居于万物之中——这位向导正立于此处。",
+    footer_caution:
+      "温馨提示：本指南面向在日常生活中寻求安定的普通人，而非任何政治或宗教偏见的平台。它的回答基于权威典籍以及背后的语言模型；多数附有可查证的引用，但偶尔仍可能出现失实的引证，尽管这种情况很少。请将其视为起点，重要之事请自行核实。",
     footer_fine: "śruti · smṛti · viveka — 由 three.js 与 Claude 构建",
   },
 };
@@ -1873,6 +1881,11 @@ export default function SanatanaGuide() {
         .footer { padding: 90px 24px 60px; text-align: center; }
         .footer .om-close { font-family: var(--deva); color: var(--ember); font-size: 30px; }
         .footer p { color: var(--ash); max-width: 58ch; margin: 18px auto 0; font-size: 17.5px; }
+        .footer .caution {
+          max-width: 60ch; margin: 22px auto 0; font-size: 13px; line-height: 1.6;
+          font-style: italic; color: rgba(154,149,175,0.72);
+          padding-top: 20px; border-top: 1px solid var(--line);
+        }
         .footer .fine { font-family: var(--mono); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; margin-top: 34px; color: rgba(154,149,175,0.6); }
 
         /* ---------- language switcher (click-to-open dropdown) ---------- */
@@ -2228,6 +2241,7 @@ export default function SanatanaGuide() {
       <footer className="footer">
         <div className="om-close">॥ ॐ शान्तिः शान्तिः शान्तिः ॥</div>
         <p>{t("footer_p")}</p>
+        <p className="caution">{t("footer_caution")}</p>
         <div className="fine">{t("footer_fine")}</div>
       </footer>
 
