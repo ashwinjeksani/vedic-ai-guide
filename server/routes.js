@@ -19,7 +19,11 @@ const MODELS = {
   anthropic: "claude-sonnet-5",
   openai: "gpt-4o",
 };
-const MAX_TOKENS = 1000;
+// Ceiling only — the model stops naturally (end_turn) well before this for a
+// guide whose answers target ~120-220 words. Set high enough that a reply is
+// never cut off mid-sentence. Kept under ~16k so non-streaming stays safe from
+// HTTP timeouts (raw fetch, no SDK guard). Cost tracks actual output, not the cap.
+const MAX_TOKENS = 8192;
 
 // A guest is identified by a signed httpOnly cookie so the daily count sticks
 // to a browser without requiring an account. Clearing cookies resets it — an
@@ -180,7 +184,7 @@ export async function chat(req, res) {
     if (provider === "anthropic" && data.usage) {
       const u = data.usage;
       console.log(
-        `[cache] write=${u.cache_creation_input_tokens || 0} read=${u.cache_read_input_tokens || 0} input=${u.input_tokens || 0}`
+        `[cache] write=${u.cache_creation_input_tokens || 0} read=${u.cache_read_input_tokens || 0} input=${u.input_tokens || 0} out=${u.output_tokens || 0} stop=${data.stop_reason}`
       );
     }
 
