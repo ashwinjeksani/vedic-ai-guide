@@ -1052,6 +1052,10 @@ function LangSelect({ lang, setLang, label, className = "", up = false }) {
   );
 }
 
+// Sign-in / register is hidden for now — everyone uses the guest tier (10/day).
+// Flip to true to bring back passkey auth + the admin allowlist UI.
+const AUTH_ENABLED = false;
+
 export default function SanatanaGuide() {
   const mountRef = useRef(null);
   const chatEndRef = useRef(null);
@@ -2293,37 +2297,39 @@ export default function SanatanaGuide() {
           <LangSelect lang={lang} setLang={setLang} label={t("lang_label")} />
         </div>
 
-        {/* identity / sign-in row — sign-in is now optional, not a gate */}
-        <div className="dock-id">
-          {user ? (
-            <React.Fragment>
-              <span className="who">
-                <b>{user.username}</b>
-                {user.role === "admin" && <span className="tag-admin"> admin</span>}
-              </span>
-              {user.role === "admin" && (
-                <button onClick={openAdmin}>{t("admin_title")}</button>
-              )}
-              <button onClick={doLogout}>{t("auth_signout")}</button>
-            </React.Fragment>
-          ) : (
-            <React.Fragment>
-              <span className="who guest">{t("guest_label")}</span>
-              <button
-                onClick={() => {
-                  setShowAuth((v) => !v);
-                  setAuthError(null);
-                }}
-                aria-expanded={showAuth}
-              >
-                {t("auth_signin_optional")}
-              </button>
-            </React.Fragment>
-          )}
-        </div>
+        {/* identity / sign-in row — hidden entirely while AUTH_ENABLED is off */}
+        {(user || AUTH_ENABLED) && (
+          <div className="dock-id">
+            {user ? (
+              <React.Fragment>
+                <span className="who">
+                  <b>{user.username}</b>
+                  {user.role === "admin" && <span className="tag-admin"> admin</span>}
+                </span>
+                {user.role === "admin" && (
+                  <button onClick={openAdmin}>{t("admin_title")}</button>
+                )}
+                <button onClick={doLogout}>{t("auth_signout")}</button>
+              </React.Fragment>
+            ) : (
+              <React.Fragment>
+                <span className="who guest">{t("guest_label")}</span>
+                <button
+                  onClick={() => {
+                    setShowAuth((v) => !v);
+                    setAuthError(null);
+                  }}
+                  aria-expanded={showAuth}
+                >
+                  {t("auth_signin_optional")}
+                </button>
+              </React.Fragment>
+            )}
+          </div>
+        )}
 
         {/* on-demand auth panel (register / login) */}
-        {!user && showAuth && (
+        {AUTH_ENABLED && !user && showAuth && (
           <div className="auth">
             <button
               className="auth-close"
@@ -2420,7 +2426,7 @@ export default function SanatanaGuide() {
           <div className="limit-box">
             <h3>{t("auth_limit_title")}</h3>
             <p>{limitMsg || t("auth_limit_p")}</p>
-            {!user && (
+            {AUTH_ENABLED && !user && (
               <button
                 className="btn"
                 onClick={() => {
