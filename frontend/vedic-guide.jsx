@@ -2009,7 +2009,7 @@ export default function SanatanaGuide() {
           border-radius: 10px; overflow: hidden; margin-top: 22px;
           box-shadow: 0 18px 50px rgba(0,0,0,0.4);
         }
-        .guide-inline .dock-log { max-height: 60vh; min-height: 240px; }
+        .guide-inline .dock-log { max-height: 68vh; min-height: 300px; }
         /* on mobile the guide is the main section, right under the hero */
         .guide-main { padding-top: 44px; padding-bottom: 72px; }
         @media (max-width: 720px) {
@@ -2026,7 +2026,7 @@ export default function SanatanaGuide() {
             margin-top: 18px; border-radius: 0;
             border-left: none; border-right: none;
           }
-          .guide-inline .dock-log { max-height: 64vh; padding: 16px 12px 4px; }
+          .guide-inline .dock-log { max-height: 72vh; padding: 16px 12px 4px; }
           .guide-inline .msg-bubble { font-size: 17px; line-height: 1.55; }
           .guide-inline .msg.user .msg-bubble { max-width: 88%; }
         }
@@ -2034,8 +2034,8 @@ export default function SanatanaGuide() {
         /* ---------- floating guide dock ---------- */
         .dock {
           position: fixed; right: 22px; bottom: 22px; z-index: 90;
-          width: min(420px, calc(100vw - 24px));
-          max-height: min(640px, calc(100vh - 44px));
+          width: min(440px, calc(100vw - 24px));
+          max-height: min(780px, calc(100vh - 40px));
           display: none; flex-direction: column;
           background: rgba(17,14,32,0.94);
           backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
