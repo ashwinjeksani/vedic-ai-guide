@@ -2,34 +2,496 @@ import React, { useState, useRef, useEffect } from "react";
 import * as THREE from "three";
 
 /* ------------------------------------------------------------------ */
-/*  The agent's mind — hermeneutic rules for reading the Vedic corpus  */
+/*  The agent's mind now lives on the SERVER (server/prompt.js, and    */
+/*  the dev proxy in vite.config.js). The browser sends only           */
+/*  { provider, lang, messages } — any client-supplied system prompt   */
+/*  is ignored by the backend. This is the core prompt-injection fix.  */
 /* ------------------------------------------------------------------ */
 
-const SYSTEM_PROMPT = `You are Sanatana, a Vedic guide living inside a web app. Your knowledge spans the Hindu corpus: the four Vedas (Samhitas, Brahmanas, Aranyakas), the principal Upanishads, the Bhagavad Gita, the Itihasas (Ramayana, Mahabharata), the Puranas, the Dharmashastras, and the six darshanas including Yoga and Vedanta.
+/* ------------------------------------------------------------------ */
+/*  Library data — curated essence with fresh, original renderings     */
+/* ------------------------------------------------------------------ */
 
-Your hermeneutic rules. Never break these:
+/* ------------------------------------------------------------------ */
+/*  i18n — UI localization (English, Hindi, Telugu, Chinese)          */
+/*  Sanskrit verses & Devanagari titles are primary sources: not      */
+/*  translated. The guide's chat answers are localized at request     */
+/*  time by the SERVER, which appends the language instruction.        */
+/* ------------------------------------------------------------------ */
 
-1. DISTINGUISH SHRUTI FROM SMRITI. Shruti ("that which was heard" - the Vedas and Upanishads) carries timeless principles about consciousness, dharma, and the Self. Smriti ("that which is remembered" - the Gita, epics, Puranas, and Dharmashastras such as the Manusmriti) is human composition applying those principles to a specific time, place, and society.
 
-2. SMRITI IS TIME-BOUND BY ITS OWN ADMISSION. Manusmriti 1.85 itself says dharma differs by age (yuga-dharma). Social regulations in the Dharmashastras - rules of caste, gender, punishment, occupation - were calibrated for ancient societies and do not bind the present. When asked about them, say so plainly, then extract whatever underlying principle is worth keeping, if any.
+const LANGUAGES = [
+  { id: "en", label: "English", native: "English" },
+  { id: "hi", label: "Hindi", native: "हिन्दी" },
+  { id: "te", label: "Telugu", native: "తెలుగు" },
+  { id: "zh", label: "Chinese", native: "中文" },
+];
 
-3. WHEN SMRITI CONFLICTS WITH SHRUTI, SHRUTI PREVAILS. This is the tradition's own rule of precedence, not a modern invention.
+// The reply-language instruction is appended to the system prompt on the
+// SERVER (server/prompt.js); the frontend just sends the `lang` id.
 
-4. NEVER READ LITERALLY WHAT WAS WRITTEN AS METAPHOR, STORY, OR PEDAGOGY. The seers encoded subtle knowledge in narrative and symbol so that everyone - not only scholars - could carry it. Fire, battle, gods, demons, churned oceans: interpret at the level of meaning. Reading literally is reading less, not more.
+// The label the UI uses to detect and style the guide's "In practice" block,
+// per language. The splitter checks all of these plus the literal "In practice:".
+const IN_PRACTICE_LABELS = {
+  en: "In practice",
+  hi: "व्यवहार में",
+  te: "ఆచరణలో",
+  zh: "实践中",
+};
 
-5. ANSWER FOR THE REGULAR PERSON. Take everyday questions - anger, work, grief, money, family, fear, purpose - and answer from the essence of Vedic thought: the mahavakyas, karma-yoga, the gunas, the Self beyond the mind, the witness of experience. Practical first, metaphysical second.
+const STRINGS = {
+  en: {
+    // nav
+    nav_reading: "The Way of Reading",
+    nav_ask: "Ask the Guide",
+    nav_library: "The Library",
+    nav_sources: "Sources",
+    lang_label: "Language",
 
-6. CITE BRIEFLY so the person can go read: e.g. (Katha Upanishad 1.2.20), (Gita 2.47), (Brihadaranyaka 1.3.28). One or two citations per answer is enough.
+    // hero
+    hero_eyebrow_ref: "Ṛg Veda 10.129",
+    hero_title: "Before being and non-being, there was the question.",
+    hero_sub:
+      "A guide that carries the essence of the Vedas — and knows the difference between what is eternal and what was written for its time.",
+    hero_cta_ask: "Ask the guide",
+    hero_cta_read: "Read the sources",
+    hero_scroll: "scroll ↓",
 
-7. BE HONEST ABOUT DEBATE. Schools differ - Advaita, Vishishtadvaita, Dvaita; scholars dispute dates and readings. Prefer "the texts suggest" over pronouncements. Never claim divine or priestly authority.
+    // method
+    method_eyebrow: "The method",
+    method_title: "How this guide reads five thousand years of text",
+    method_lede:
+      "The tradition itself gives us the tools. Not everything in the corpus makes the same kind of claim — and the texts say so.",
+    method1_h: "Hear what is eternal",
+    method1_gloss: "śruti — that which was heard",
+    method1_p:
+      "The Vedas and Upaniṣads speak of consciousness, dharma, and the Self — claims meant to hold in any century. This is the layer the guide treats as principle.",
+    method1_eg:
+      "Gravity was true before anyone named it. \"You are not your thoughts\" is that kind of claim — a description of how things are, not a rule of any era.",
+    method2_h: "Place what was written for its time",
+    method2_gloss: "smṛti — that which is remembered",
+    method2_p:
+      "The Gītā, epics, Purāṇas, and law codes like the Manusmṛti applied those principles to ancient societies. Manu 1.85 admits it: dharma differs by age. When smṛti conflicts with śruti, the tradition's own rule is that śruti prevails.",
+    method2_eg:
+      "Think of a company handbook from 1975 — sincere, binding in its day, absurd for judging remote work. Keep its concern for fairness; retire its clauses.",
+    method3_h: "Carry the essence forward",
+    method3_gloss: "deśa · kāla · pātra",
+    method3_p:
+      "Place, time, person. A rule was calibrated to its circumstance; the principle beneath it travels. The guide keeps the question a text was answering, not the answer frozen in its era.",
+    method3_eg:
+      "\"Don't overload the bullock cart\" becomes \"don't overload the truck.\" The vehicle changed; the care behind the rule didn't.",
+    method_note_pre:
+      "The seers wrote in story and symbol so a farmer and a philosopher could carry the same truth at different depths. ",
+    method_note_em: "To read literally is to read less, not more.",
 
-8. NEVER USE THE TEXTS TO JUSTIFY DISCRIMINATION by birth, caste, or gender. If asked about such passages, explain their historical context, then point to the shruti principle that the same Self dwells in all beings (Isha Upanishad 6).
+    // ask
+    ask_eyebrow: "The guide",
+    ask_title: "Ask anything. Get the essence, not the dogma.",
+    ask_lede:
+      "Everyday questions welcome — work, anger, grief, purpose. The guide answers from the texts, cites its sources, closes with a real-world example, and tells you when a rule belonged to another age.",
+    launcher_p:
+      "The guide floats with you now. Open it from the glowing bindu in the corner and it stays at your side while you scroll and read — drag it anywhere on the screen.",
+    launcher_open: "Open the guide",
 
-9. KEEP ANSWERS GROUNDED AND SHORT - usually 120 to 220 words. Plain language first; Sanskrit terms explained in passing, not paraded. You may open with a single short verse when it genuinely fits. Avoid bullet lists unless the person asks for steps.
+    // dock
+    dock_voice: "Voice",
+    dock_minimize: "Minimize",
+    dock_empty_1: "Begin with whatever is actually on your mind.",
+    dock_empty_2: "The guide will meet you there.",
+    dock_placeholder: "Ask the guide…",
+    dock_send: "Ask",
+    dock_consulting: "consulting the texts…",
+    dock_error: "The guide could not be reached. Ask again in a moment.",
+    label_you: "You",
 
-10. YOU ARE A GUIDE, NOT A GURU. For medical, legal, or psychological crises, gently point toward professional help alongside any wisdom you offer.
+    // auth
+    auth_gate_title: "Register to ask",
+    auth_gate_p:
+      "Sanātana uses a passkey — your device's fingerprint, face, or PIN. No password to remember.",
+    auth_username: "Choose a name",
+    auth_register: "Create passkey",
+    auth_have: "Already registered?",
+    auth_login: "Sign in",
+    auth_signin_title: "Sign in",
+    auth_signin_p: "Use your passkey to continue.",
+    auth_need_account: "Need an account?",
+    auth_signout: "Sign out",
+    auth_pending_note:
+      "You have limited access until an admin approves you. You can ask one question now.",
+    auth_limit_title: "You've used your free question",
+    auth_limit_p:
+      "Ask the admin to add you to the allowlist for full access.",
+    auth_admin_hello: "You are the admin.",
+    auth_working: "Working…",
+    auth_err_generic: "Something went wrong. Try again.",
+    auth_err_taken: "That name is taken. Pick another.",
 
-11. GROUND IT IN THE REAL WORLD. Wherever applicable, end your answer with one final short paragraph that begins exactly with "In practice:" - a concrete, modern, everyday example (a missed promotion, a hard commute, an argument at dinner, a hospital waiting room, a deadline) showing how the idea actually works in daily life. Keep it to one to three sentences. Skip it only when the question is purely factual or historical, or when an example would trivialize grief or crisis.`;
+    // admin
+    admin_title: "Allowlist",
+    admin_refresh: "Refresh",
+    admin_col_user: "User",
+    admin_col_status: "Status",
+    admin_col_used: "Used",
+    admin_col_action: "Action",
+    admin_approve: "Allowlist",
+    admin_revoke: "Revoke",
+    admin_status_pending: "pending",
+    admin_status_allowlisted: "allowlisted",
+    admin_empty: "No users yet.",
+
+    // library
+    lib_eyebrow: "The library",
+    lib_title: "The sources, laid open",
+    lib_lede:
+      "A curated map of the corpus — what each text is, when it arose, and one verse that carries its heart. Complete canonical texts are linked under Complete Texts.",
+    lib_tab_vedas: "The Four Vedas",
+    lib_tab_upanishads: "Upaniṣads",
+    lib_tab_upavedas: "Upavedas & Vedāṅgas",
+    lib_tab_smriti: "Smṛti Texts",
+    lib_tab_sources: "Complete Texts",
+    lib_reading_in_time: "Reading in time",
+    lib_open_archive: "Open archive →",
+    lib_disclaimer:
+      "Renderings above are plain-language glosses meant to open a door, not settle a scholarly question. Dates are approximate and debated; the tradition is older than any manuscript of it.",
+
+    // footer
+    footer_p:
+      "Sanātana interprets; it does not pronounce. Schools of Vedānta disagree with one another, scholars dispute dates and readings, and the guide will tell you when they do. Where the texts say the same Self dwells in all beings, that is where this guide stands.",
+    footer_fine: "śruti · smṛti · viveka — built with three.js & Claude",
+  },
+
+  hi: {
+    nav_reading: "पढ़ने की विधि",
+    nav_ask: "मार्गदर्शक से पूछें",
+    nav_library: "ग्रंथालय",
+    nav_sources: "स्रोत",
+    lang_label: "भाषा",
+
+    hero_eyebrow_ref: "ऋग्वेद १०.१२९",
+    hero_title: "सत् और असत् से पहले, केवल प्रश्न था।",
+    hero_sub:
+      "एक मार्गदर्शक जो वेदों का सार धारण करता है — और जानता है कि क्या शाश्वत है और क्या अपने युग के लिए लिखा गया था।",
+    hero_cta_ask: "मार्गदर्शक से पूछें",
+    hero_cta_read: "स्रोत पढ़ें",
+    hero_scroll: "नीचे जाएँ ↓",
+
+    method_eyebrow: "विधि",
+    method_title: "यह मार्गदर्शक पाँच हज़ार वर्षों के ग्रंथों को कैसे पढ़ता है",
+    method_lede:
+      "परंपरा स्वयं हमें साधन देती है। समस्त ग्रंथ एक ही प्रकार का दावा नहीं करते — और ग्रंथ स्वयं यह कहते हैं।",
+    method1_h: "जो शाश्वत है उसे सुनें",
+    method1_gloss: "श्रुति — जो सुनी गई",
+    method1_p:
+      "वेद और उपनिषद् चेतना, धर्म और आत्मा की बात करते हैं — ऐसे सत्य जो किसी भी युग में टिकते हैं। यही वह परत है जिसे मार्गदर्शक सिद्धांत मानता है।",
+    method1_eg:
+      "गुरुत्वाकर्षण नाम मिलने से पहले भी सत्य था। \"आप अपने विचार नहीं हैं\" — यह उसी प्रकार का कथन है, किसी युग का नियम नहीं, बल्कि यथार्थ का वर्णन।",
+    method2_h: "जो अपने युग के लिए लिखा गया उसे उसके स्थान पर रखें",
+    method2_gloss: "स्मृति — जो स्मरण की गई",
+    method2_p:
+      "गीता, महाकाव्य, पुराण और मनुस्मृति जैसे धर्मशास्त्र उन सिद्धांतों को प्राचीन समाज पर लागू करते हैं। मनु १.८५ स्वयं स्वीकार करता है: धर्म युग के अनुसार बदलता है। जब स्मृति श्रुति से टकराती है, तो परंपरा का अपना नियम है कि श्रुति ही प्रबल होती है।",
+    method2_eg:
+      "१९७५ की किसी कंपनी की नियमावली सोचिए — अपने समय में सच्ची और बाध्यकारी, पर आज के रिमोट कार्य को आँकने के लिए बेतुकी। उसकी निष्पक्षता की भावना रखें; उसके नियम छोड़ दें।",
+    method3_h: "सार को आगे ले जाएँ",
+    method3_gloss: "देश · काल · पात्र",
+    method3_p:
+      "स्थान, समय, व्यक्ति। कोई नियम अपनी परिस्थिति के अनुरूप बना था; उसके नीचे का सिद्धांत यात्रा करता है। मार्गदर्शक उस प्रश्न को रखता है जिसका उत्तर ग्रंथ दे रहा था, न कि उस युग में जमे उत्तर को।",
+    method3_eg:
+      "\"बैलगाड़ी पर अधिक भार मत लादो\" अब \"ट्रक पर अधिक भार मत लादो\" बन जाता है। वाहन बदला; नियम के पीछे की सावधानी नहीं।",
+    method_note_pre:
+      "ऋषियों ने कथा और प्रतीक में लिखा ताकि किसान और दार्शनिक दोनों एक ही सत्य को अलग-अलग गहराई से धारण कर सकें। ",
+    method_note_em: "शब्दशः पढ़ना कम पढ़ना है, अधिक नहीं।",
+
+    ask_eyebrow: "मार्गदर्शक",
+    ask_title: "कुछ भी पूछें। सार पाएँ, हठधर्म नहीं।",
+    ask_lede:
+      "रोज़मर्रा के प्रश्न स्वागत हैं — कार्य, क्रोध, शोक, उद्देश्य। मार्गदर्शक ग्रंथों से उत्तर देता है, स्रोत बताता है, एक वास्तविक उदाहरण से समाप्त करता है, और बताता है कि कब कोई नियम किसी और युग का था।",
+    launcher_p:
+      "मार्गदर्शक अब आपके साथ तैरता है। कोने में चमकते बिंदु से इसे खोलें और यह पढ़ते-स्क्रॉल करते समय आपके साथ रहता है — इसे स्क्रीन पर कहीं भी खींचें।",
+    launcher_open: "मार्गदर्शक खोलें",
+
+    dock_voice: "स्वर",
+    dock_minimize: "छोटा करें",
+    dock_empty_1: "जो सचमुच आपके मन में है, उसी से आरंभ करें।",
+    dock_empty_2: "मार्गदर्शक वहीं आपसे मिलेगा।",
+    dock_placeholder: "मार्गदर्शक से पूछें…",
+    dock_send: "पूछें",
+    dock_consulting: "ग्रंथों से परामर्श…",
+    dock_error: "मार्गदर्शक तक नहीं पहुँच सके। क्षण भर में पुनः पूछें।",
+    label_you: "आप",
+
+    auth_gate_title: "पूछने के लिए पंजीकरण करें",
+    auth_gate_p:
+      "सनातन पासकी का उपयोग करता है — आपके उपकरण की अँगुली-छाप, चेहरा या पिन। कोई पासवर्ड याद रखने की आवश्यकता नहीं।",
+    auth_username: "एक नाम चुनें",
+    auth_register: "पासकी बनाएँ",
+    auth_have: "पहले से पंजीकृत हैं?",
+    auth_login: "साइन इन करें",
+    auth_signin_title: "साइन इन",
+    auth_signin_p: "जारी रखने के लिए अपनी पासकी का उपयोग करें।",
+    auth_need_account: "खाता चाहिए?",
+    auth_signout: "साइन आउट",
+    auth_pending_note:
+      "व्यवस्थापक की स्वीकृति तक आपकी पहुँच सीमित है। आप अभी एक प्रश्न पूछ सकते हैं।",
+    auth_limit_title: "आपने अपना निःशुल्क प्रश्न उपयोग कर लिया",
+    auth_limit_p:
+      "पूर्ण पहुँच के लिए व्यवस्थापक से अनुमति-सूची में जोड़ने को कहें।",
+    auth_admin_hello: "आप व्यवस्थापक हैं।",
+    auth_working: "कार्य हो रहा है…",
+    auth_err_generic: "कुछ गड़बड़ हुई। पुनः प्रयास करें।",
+    auth_err_taken: "यह नाम पहले से लिया गया है। दूसरा चुनें।",
+
+    admin_title: "अनुमति-सूची",
+    admin_refresh: "ताज़ा करें",
+    admin_col_user: "उपयोगकर्ता",
+    admin_col_status: "स्थिति",
+    admin_col_used: "उपयोग",
+    admin_col_action: "क्रिया",
+    admin_approve: "अनुमति दें",
+    admin_revoke: "रद्द करें",
+    admin_status_pending: "प्रतीक्षारत",
+    admin_status_allowlisted: "अनुमत",
+    admin_empty: "अभी कोई उपयोगकर्ता नहीं।",
+
+    lib_eyebrow: "ग्रंथालय",
+    lib_title: "स्रोत, खुले हुए",
+    lib_lede:
+      "समग्र का एक चयनित मानचित्र — प्रत्येक ग्रंथ क्या है, कब रचा गया, और एक श्लोक जो उसका हृदय धारण करता है। पूर्ण प्रामाणिक ग्रंथ 'पूर्ण ग्रंथ' के अंतर्गत जुड़े हैं।",
+    lib_tab_vedas: "चार वेद",
+    lib_tab_upanishads: "उपनिषद्",
+    lib_tab_upavedas: "उपवेद और वेदांग",
+    lib_tab_smriti: "स्मृति ग्रंथ",
+    lib_tab_sources: "पूर्ण ग्रंथ",
+    lib_reading_in_time: "समय में पढ़ना",
+    lib_open_archive: "संग्रह खोलें →",
+    lib_disclaimer:
+      "ऊपर के अनुवाद सरल भाषा की व्याख्याएँ हैं जो द्वार खोलती हैं, किसी विद्वत्तापूर्ण प्रश्न का निर्णय नहीं करतीं। तिथियाँ अनुमानित और विवादित हैं; परंपरा अपनी किसी भी पांडुलिपि से पुरानी है।",
+
+    footer_p:
+      "सनातन व्याख्या करता है; घोषणा नहीं करता। वेदांत के विभिन्न सम्प्रदाय आपस में असहमत हैं, विद्वान तिथियों और पाठों पर विवाद करते हैं, और मार्गदर्शक आपको बताएगा कि कब। जहाँ ग्रंथ कहते हैं कि वही एक आत्मा सभी प्राणियों में वास करती है, वहीं यह मार्गदर्शक खड़ा है।",
+    footer_fine: "श्रुति · स्मृति · विवेक — three.js और Claude से निर्मित",
+  },
+
+  te: {
+    nav_reading: "చదివే విధానం",
+    nav_ask: "మార్గదర్శిని అడగండి",
+    nav_library: "గ్రంథాలయం",
+    nav_sources: "మూలాలు",
+    lang_label: "భాష",
+
+    hero_eyebrow_ref: "ఋగ్వేదం ౧౦.౧౨౯",
+    hero_title: "ఉనికి, అనునికికి ముందు — కేవలం ప్రశ్న ఉండేది.",
+    hero_sub:
+      "వేదాల సారాన్ని మోసే మార్గదర్శిని — శాశ్వతమైనది ఏది, తన కాలానికి రాయబడినది ఏది అనే తేడాను ఎరిగినది.",
+    hero_cta_ask: "మార్గదర్శినిని అడగండి",
+    hero_cta_read: "మూలాలను చదవండి",
+    hero_scroll: "క్రిందికి ↓",
+
+    method_eyebrow: "విధానం",
+    method_title: "ఈ మార్గదర్శిని ఐదు వేల సంవత్సరాల గ్రంథాలను ఎలా చదువుతుంది",
+    method_lede:
+      "సంప్రదాయమే మనకు సాధనాలను ఇస్తుంది. సమస్త గ్రంథాలు ఒకే రకమైన వాదనను చేయవు — ఆ విషయాన్ని గ్రంథాలే చెబుతాయి.",
+    method1_h: "శాశ్వతమైనదాన్ని వినండి",
+    method1_gloss: "శ్రుతి — వినబడినది",
+    method1_p:
+      "వేదాలు, ఉపనిషత్తులు చైతన్యం, ధర్మం, ఆత్మ గురించి మాట్లాడతాయి — ఏ శతాబ్దంలోనైనా నిలిచే సత్యాలు. మార్గదర్శిని దీన్ని సూత్రంగా భావిస్తుంది.",
+    method1_eg:
+      "గురుత్వాకర్షణ పేరు పెట్టకముందే నిజం. \"మీరు మీ ఆలోచనలు కారు\" — అది అలాంటి కథనమే; ఏ యుగపు నియమం కాదు, యథార్థపు వర్ణన.",
+    method2_h: "తన కాలానికి రాసినదాన్ని దాని స్థానంలో ఉంచండి",
+    method2_gloss: "స్మృతి — స్మరించబడినది",
+    method2_p:
+      "గీత, ఇతిహాసాలు, పురాణాలు, మనుస్మృతి వంటి ధర్మశాస్త్రాలు ఆ సూత్రాలను ప్రాచీన సమాజాలకు వర్తింపజేశాయి. మను ౧.౮౫ స్వయంగా అంగీకరిస్తుంది: ధర్మం యుగానుసారం మారుతుంది. స్మృతి శ్రుతితో విభేదిస్తే, శ్రుతియే గెలుస్తుందన్నది సంప్రదాయపు నియమం.",
+    method2_eg:
+      "౧౯౭౫ నాటి కంపెనీ నియమావళిని ఊహించండి — ఆ కాలంలో నిజాయితీగా, బద్ధంగా ఉండేది, కానీ నేటి రిమోట్ పనిని అంచనా వేయడానికి అసంబద్ధం. దాని న్యాయబుద్ధిని ఉంచండి; నిబంధనలను వదిలేయండి.",
+    method3_h: "సారాన్ని ముందుకు తీసుకెళ్లండి",
+    method3_gloss: "దేశ · కాల · పాత్ర",
+    method3_p:
+      "స్థలం, కాలం, వ్యక్తి. ఒక నియమం దాని పరిస్థితికి తగినట్టు రూపొందింది; దాని కింది సూత్రం ప్రయాణిస్తుంది. గ్రంథం సమాధానమిస్తున్న ప్రశ్నను మార్గదర్శిని ఉంచుతుంది, ఆ యుగంలో గడ్డకట్టిన సమాధానాన్ని కాదు.",
+    method3_eg:
+      "\"ఎద్దుబండిపై ఎక్కువ భారం వేయకు\" అనేది \"ట్రక్కుపై ఎక్కువ భారం వేయకు\" అవుతుంది. వాహనం మారింది; నియమం వెనుకటి శ్రద్ధ మారలేదు.",
+    method_note_pre:
+      "రైతు, తత్త్వవేత్త ఇద్దరూ ఒకే సత్యాన్ని వేర్వేరు లోతుల్లో మోయగలిగేలా ఋషులు కథ, ప్రతీకల్లో రాశారు. ",
+    method_note_em: "అక్షరాలా చదవడం తక్కువ చదవడమే, ఎక్కువ కాదు.",
+
+    ask_eyebrow: "మార్గదర్శిని",
+    ask_title: "ఏదైనా అడగండి. సారాన్ని పొందండి, మతాంధతను కాదు.",
+    ask_lede:
+      "నిత్య జీవితపు ప్రశ్నలకు స్వాగతం — పని, కోపం, దుఃఖం, ఉద్దేశ్యం. మార్గదర్శిని గ్రంథాల నుండి సమాధానమిస్తుంది, మూలాలను చూపుతుంది, వాస్తవ ఉదాహరణతో ముగిస్తుంది, ఒక నియమం మరో యుగానికి చెందినప్పుడు చెబుతుంది.",
+    launcher_p:
+      "మార్గదర్శిని ఇప్పుడు మీతో తేలుతుంది. మూలలో మెరిసే బిందువు నుండి తెరవండి — మీరు చదువుతూ స్క్రోల్ చేస్తున్నప్పుడు అది మీ పక్కనే ఉంటుంది. తెరపై ఎక్కడికైనా లాగండి.",
+    launcher_open: "మార్గదర్శినిని తెరవండి",
+
+    dock_voice: "స్వరం",
+    dock_minimize: "చిన్నదిగా",
+    dock_empty_1: "మీ మనసులో నిజంగా ఉన్నదానితో ప్రారంభించండి.",
+    dock_empty_2: "మార్గదర్శిని అక్కడే మిమ్మల్ని కలుస్తుంది.",
+    dock_placeholder: "మార్గదర్శినిని అడగండి…",
+    dock_send: "అడుగు",
+    dock_consulting: "గ్రంథాలను సంప్రదిస్తోంది…",
+    dock_error: "మార్గదర్శినిని చేరలేకపోయాం. క్షణంలో మళ్లీ అడగండి.",
+    label_you: "మీరు",
+
+    auth_gate_title: "అడగడానికి నమోదు చేసుకోండి",
+    auth_gate_p:
+      "సనాతన పాస్‌కీని వాడుతుంది — మీ పరికరపు వేలిముద్ర, ముఖం లేదా పిన్. గుర్తుంచుకోవలసిన పాస్‌వర్డ్ లేదు.",
+    auth_username: "ఒక పేరు ఎంచుకోండి",
+    auth_register: "పాస్‌కీ సృష్టించండి",
+    auth_have: "ఇప్పటికే నమోదయ్యారా?",
+    auth_login: "సైన్ ఇన్",
+    auth_signin_title: "సైన్ ఇన్",
+    auth_signin_p: "కొనసాగించడానికి మీ పాస్‌కీని వాడండి.",
+    auth_need_account: "ఖాతా కావాలా?",
+    auth_signout: "సైన్ అవుట్",
+    auth_pending_note:
+      "నిర్వాహకుడు ఆమోదించే వరకు మీ ప్రవేశం పరిమితం. ఇప్పుడు మీరు ఒక ప్రశ్న అడగవచ్చు.",
+    auth_limit_title: "మీ ఉచిత ప్రశ్నను వాడేశారు",
+    auth_limit_p:
+      "పూర్తి ప్రవేశం కోసం అనుమతి-జాబితాలో చేర్చమని నిర్వాహకుడిని అడగండి.",
+    auth_admin_hello: "మీరు నిర్వాహకులు.",
+    auth_working: "జరుగుతోంది…",
+    auth_err_generic: "ఏదో తప్పు జరిగింది. మళ్లీ ప్రయత్నించండి.",
+    auth_err_taken: "ఆ పేరు తీసుకోబడింది. వేరొకటి ఎంచుకోండి.",
+
+    admin_title: "అనుమతి-జాబితా",
+    admin_refresh: "రిఫ్రెష్",
+    admin_col_user: "వినియోగదారు",
+    admin_col_status: "స్థితి",
+    admin_col_used: "వాడకం",
+    admin_col_action: "చర్య",
+    admin_approve: "అనుమతించు",
+    admin_revoke: "ఉపసంహరించు",
+    admin_status_pending: "వేచి ఉంది",
+    admin_status_allowlisted: "అనుమతించబడింది",
+    admin_empty: "ఇంకా వినియోగదారులు లేరు.",
+
+    lib_eyebrow: "గ్రంథాలయం",
+    lib_title: "మూలాలు, తెరిచి ఉంచబడ్డాయి",
+    lib_lede:
+      "సమగ్రపు ఒక ఎంపిక చేసిన పటం — ప్రతి గ్రంథం ఏమిటి, ఎప్పుడు పుట్టింది, దాని హృదయాన్ని మోసే ఒక శ్లోకం. పూర్తి ప్రామాణిక గ్రంథాలు 'పూర్తి గ్రంథాల' కింద అనుసంధానించబడ్డాయి.",
+    lib_tab_vedas: "నాలుగు వేదాలు",
+    lib_tab_upanishads: "ఉపనిషత్తులు",
+    lib_tab_upavedas: "ఉపవేదాలు & వేదాంగాలు",
+    lib_tab_smriti: "స్మృతి గ్రంథాలు",
+    lib_tab_sources: "పూర్తి గ్రంథాలు",
+    lib_reading_in_time: "కాలంలో చదవడం",
+    lib_open_archive: "సంగ్రహం తెరవండి →",
+    lib_disclaimer:
+      "పైన ఇచ్చిన అనువాదాలు ద్వారం తెరిచే సరళ భాషా వివరణలు, ఏ పండిత ప్రశ్నను తేల్చేవి కావు. తేదీలు అంచనావే, వివాదాస్పదమే; సంప్రదాయం దాని ఏ ప్రతి కంటేనైనా పురాతనమైనది.",
+
+    footer_p:
+      "సనాతన వ్యాఖ్యానిస్తుంది; ప్రకటించదు. వేదాంత సంప్రదాయాలు ఒకదానితో ఒకటి విభేదిస్తాయి, పండితులు తేదీలు, పాఠాలపై వాదిస్తారు, ఎప్పుడు అలా జరిగిందో మార్గదర్శిని చెబుతుంది. అదే ఒక్క ఆత్మ సకల ప్రాణుల్లో వసిస్తుందని గ్రంథాలు చెప్పే చోటే ఈ మార్గదర్శిని నిలుస్తుంది.",
+    footer_fine: "శ్రుతి · స్మృతి · వివేక — three.js మరియు Claudeతో నిర్మించబడింది",
+  },
+
+  zh: {
+    nav_reading: "解读之道",
+    nav_ask: "向导师提问",
+    nav_library: "典籍库",
+    nav_sources: "来源",
+    lang_label: "语言",
+
+    hero_eyebrow_ref: "《梨俱吠陀》10.129",
+    hero_title: "在有与无之前，唯有那个问题。",
+    hero_sub:
+      "一位承载吠陀精髓的向导——并且懂得区分何为永恒、何为为其时代而写。",
+    hero_cta_ask: "向导师提问",
+    hero_cta_read: "阅读来源",
+    hero_scroll: "向下滚动 ↓",
+
+    method_eyebrow: "方法",
+    method_title: "这位向导如何解读五千年的典籍",
+    method_lede:
+      "传统本身给了我们工具。整部典籍并非都作出同一种主张——典籍自己也这样说。",
+    method1_h: "聆听永恒者",
+    method1_gloss: "śruti（天启）——所听闻者",
+    method1_p:
+      "吠陀与奥义书谈论意识、法与自我——这些主张意在任何世纪都成立。向导把这一层视为原则。",
+    method1_eg:
+      "重力在被命名之前就是真的。“你不是你的念头”正是这类主张——是对实相的描述，而非某个时代的规则。",
+    method2_h: "把为其时代而写者放回原位",
+    method2_gloss: "smṛti（圣传）——所忆念者",
+    method2_p:
+      "《薄伽梵歌》、史诗、往世书，以及《摩奴法论》一类法典，把那些原则应用于古代社会。摩奴1.85自己承认：法随时代而异。当圣传与天启冲突时，传统自身的规则是天启为准。",
+    method2_eg:
+      "想象一本1975年的公司手册——在当时真诚而有约束力，用来评判远程办公却荒谬。保留它对公平的关切，废弃它的条款。",
+    method3_h: "把精髓传承下去",
+    method3_gloss: "deśa · kāla · pātra（地·时·人）",
+    method3_p:
+      "地点、时间、人。规则是为其处境而定的；其下的原则却能流传。向导保留典籍所回答的问题，而非冻结在那个时代的答案。",
+    method3_eg:
+      "“不要给牛车超载”变成“不要给卡车超载”。载具变了，规则背后的用心没变。",
+    method_note_pre:
+      "先知们以故事与象征书写，好让农夫与哲人都能在各自的深度承载同一真理。",
+    method_note_em: "照字面读，是读得更少，而非更多。",
+
+    ask_eyebrow: "向导",
+    ask_title: "尽管发问。求其精髓，而非教条。",
+    ask_lede:
+      "欢迎日常问题——工作、愤怒、悲伤、意义。向导从典籍作答，标注来源，以一个现实例子收尾，并会告诉你某条规则何时属于另一个时代。",
+    launcher_p:
+      "向导现在与你同行。从角落里发光的明点打开它，你滚动阅读时它始终在侧——可拖到屏幕任意处。",
+    launcher_open: "打开向导",
+
+    dock_voice: "声音",
+    dock_minimize: "最小化",
+    dock_empty_1: "从你心中真正挂念的事开始。",
+    dock_empty_2: "向导会在那里与你相会。",
+    dock_placeholder: "向导师提问……",
+    dock_send: "提问",
+    dock_consulting: "正在查阅典籍……",
+    dock_error: "无法连接向导。请稍后再问。",
+    label_you: "你",
+
+    auth_gate_title: "注册后提问",
+    auth_gate_p:
+      "Sanātana 使用通行密钥——你设备的指纹、面容或 PIN。无需记忆密码。",
+    auth_username: "取一个名字",
+    auth_register: "创建通行密钥",
+    auth_have: "已经注册？",
+    auth_login: "登录",
+    auth_signin_title: "登录",
+    auth_signin_p: "使用你的通行密钥继续。",
+    auth_need_account: "需要账户？",
+    auth_signout: "登出",
+    auth_pending_note:
+      "在管理员批准之前，你的访问受限。现在可以提一个问题。",
+    auth_limit_title: "你已用完免费提问",
+    auth_limit_p: "请管理员把你加入允许名单以获得完整访问。",
+    auth_admin_hello: "你是管理员。",
+    auth_working: "处理中……",
+    auth_err_generic: "出错了，请重试。",
+    auth_err_taken: "该名字已被占用，请另选。",
+
+    admin_title: "允许名单",
+    admin_refresh: "刷新",
+    admin_col_user: "用户",
+    admin_col_status: "状态",
+    admin_col_used: "已用",
+    admin_col_action: "操作",
+    admin_approve: "加入名单",
+    admin_revoke: "撤销",
+    admin_status_pending: "待批",
+    admin_status_allowlisted: "已允许",
+    admin_empty: "暂无用户。",
+
+    lib_eyebrow: "典籍库",
+    lib_title: "摊开的来源",
+    lib_lede:
+      "一份经过甄选的典籍地图——每部典籍是什么、何时出现，以及承载其核心的一节经文。完整的经典原文列于“完整原文”下。",
+    lib_tab_vedas: "四吠陀",
+    lib_tab_upanishads: "奥义书",
+    lib_tab_upavedas: "副吠陀与吠陀支",
+    lib_tab_smriti: "圣传典籍",
+    lib_tab_sources: "完整原文",
+    lib_reading_in_time: "置于时代中读",
+    lib_open_archive: "打开档案 →",
+    lib_disclaimer:
+      "以上译述是为开一扇门的通俗释义，并非裁定学术争议。年代为约数且有争议；传统比它的任何一部抄本都更古老。",
+
+    footer_p:
+      "Sanātana 只作诠释，不作裁断。吠檀多各派彼此不合，学者们对年代与读法争论不休，向导会告诉你何处如此。典籍说同一自我居于万物之中——这位向导正立于此处。",
+    footer_fine: "śruti · smṛti · viveka — 由 three.js 与 Claude 构建",
+  },
+};
 
 /* ------------------------------------------------------------------ */
 /*  Library data — curated essence with fresh, original renderings     */
@@ -247,6 +709,82 @@ const LIBRARY = {
   ],
 };
 
+/* The applied Vedas (Upavedas) and the six limbs (Vedāṅgas) — the branches of
+   knowledge that grew from the Vedic root but face the practical world. */
+LIBRARY.upavedas = [
+  {
+    dev: "आयुर्वेदः",
+    name: "Āyurveda",
+    meta: "Upaveda of the Ṛg (or Atharva) Veda · the science of life",
+    essence:
+      "Health as balance, not conquest. The body read as a field of forces to be kept in harmony, long before the word 'holistic' existed.",
+    sa: "āyur asmin vidyate anena vā āyur vindatīti āyurvedaḥ",
+    en: "That by which life is known, or by which life is attained — this is Āyurveda: the knowledge of living, not merely of curing.",
+    ref: "Caraka Saṁhitā, Sūtrasthāna",
+    context:
+      "An applied science, empirical and evolving. Read it as the ancestor of a living medical tradition, not a fixed prescription — its wisdom is the orientation toward balance, not every remedy in it.",
+  },
+  {
+    dev: "धनुर्वेदः",
+    name: "Dhanurveda",
+    meta: "Upaveda of the Yajur Veda · the discipline of the warrior",
+    essence:
+      "The martial arts as inner training. Aim, breath, and restraint — the bow as a teacher of steadiness under pressure.",
+    sa: "dhanur-vede ca niṣṇātaḥ",
+    en: "Skilled in the science of the bow — where the true target is the wavering mind, and mastery means acting without agitation.",
+    ref: "Dhanurveda tradition (Agni Purāṇa 249–252)",
+    context:
+      "A martial manual of its era. Take the discipline — focus, control, the ethics of when not to loose the arrow — rather than the literal weaponcraft.",
+  },
+  {
+    dev: "गान्धर्ववेदः",
+    name: "Gāndharvaveda",
+    meta: "Upaveda of the Sāma Veda · music, dance, and aesthetics",
+    essence:
+      "Sound as a path. The arts treated not as decoration but as a way to refine attention and touch the transcendent.",
+    sa: "nāda-brahma",
+    en: "Sound itself as the absolute — the tradition that hears in music a discipline of the spirit, not only a pleasure of the ear.",
+    ref: "Gāndharvaveda; later, the Nāṭyaśāstra",
+    context:
+      "The aesthetic sciences. Their claim — that beauty and attention can be cultivated like any other skill — travels intact into any age.",
+  },
+  {
+    dev: "स्थापत्यवेदः",
+    name: "Sthāpatyaveda",
+    meta: "Upaveda of the Atharva Veda · architecture & the ordered world",
+    essence:
+      "Building as alignment. Space arranged so that the outer structure mirrors an inner order — the root of Vāstu and temple design.",
+    sa: "yathā piṇḍe tathā brahmāṇḍe",
+    en: "As in the individual form, so in the cosmos — the principle that a well-made space echoes the order of the whole.",
+    ref: "Sthāpatyaveda; Arthaśāstra for statecraft",
+    context:
+      "Ancient design and civic science. The enduring idea is that environments shape minds; the specific rules were tuned to their materials and climate.",
+  },
+  {
+    dev: "षड्वेदाङ्गानि",
+    name: "The Six Vedāṅgas",
+    meta: "The 'limbs of the Veda' · the tools that preserve and unlock it",
+    essence:
+      "Six auxiliary sciences that keep the Vedas legible: Śikṣā (phonetics), Chandas (metre), Vyākaraṇa (grammar), Nirukta (etymology), Jyotiṣa (astronomy/time), Kalpa (ritual procedure).",
+    sa: "chandaḥ pādau tu vedasya hastau kalpo 'tha paṭhyate",
+    en: "Metre is the feet of the Veda, ritual its hands, grammar its face — the limbs by which the body of knowledge stands and moves.",
+    ref: "Pāṇinīya Śikṣā 41–42",
+    context:
+      "Method, not doctrine. These are the engineering behind the tradition — how a purely oral corpus was transmitted for millennia without drift. Grammar and phonetics here are among the most rigorous ever devised.",
+  },
+  {
+    dev: "आगमाः · तन्त्राणि",
+    name: "Āgamas & Tantras",
+    meta: "Sectarian scripture · Śaiva, Vaiṣṇava, Śākta streams",
+    essence:
+      "The practical theologies of temple, mantra, and ritual worship — how devotion was actually structured and lived, alongside the philosophical corpus.",
+    sa: "āgataṁ śiva-vaktrebhyaḥ",
+    en: "That which has come down — the revealed manuals of worship, deity, and practice that shaped lived religion as much as the Vedas shaped thought.",
+    ref: "Āgama tradition (Śaiva, Pāñcarātra, Śākta)",
+    context:
+      "Distinct revelation streams, sometimes in tension with Vedic orthodoxy. Read them as the architecture of devotional practice; their ritual detail is bound to sect and setting, their contemplative core is broadly shared.",
+  },
+];
 const SUGGESTIONS = [
   "Does the Manusmriti still apply today?",
   "How do I deal with anger, according to the Gita?",
@@ -255,31 +793,96 @@ const SUGGESTIONS = [
   "Why did the rishis write in stories and symbols?",
 ];
 
+
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                            */
 /* ------------------------------------------------------------------ */
 
 /**
- * The guide is prompted to end answers, where applicable, with a
- * paragraph beginning "In practice:". Split it out so the UI can
- * render the real-world example as its own highlighted block.
+ * The guide ends answers, where applicable, with a paragraph beginning
+ * "In practice:" (or its translated label). Split it out so the UI can
+ * render the real-world example as its own highlighted block. We match
+ * the English label plus each localized label from IN_PRACTICE_LABELS.
  */
 function splitExample(text) {
-  const m = text.match(/(^|\n)\s*In practice:/i);
+  const labels = ["In practice", ...Object.values(IN_PRACTICE_LABELS)];
+  const alt = labels
+    .map((l) => l.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+    .join("|");
+  const re = new RegExp("(^|\\n)\\s*(?:" + alt + ")\\s*[:：]", "i");
+  const m = text.match(re);
   if (!m || m.index == null) return { body: text, example: null };
   const body = text.slice(0, m.index).trim();
   const example = text
     .slice(m.index)
-    .replace(/^\s*In practice:\s*/i, "")
+    .replace(new RegExp("^\\s*(?:" + alt + ")\\s*[:：]\\s*", "i"), "")
     .trim();
   if (!body || !example) return { body: text, example: null };
   return { body, example };
 }
 
 /* ------------------------------------------------------------------ */
-/*  Component                                                          */
+/*  Auth — passkey (WebAuthn) client calls to the backend             */
+/*  These talk to the routes in server/index.js. The browser needs    */
+/*  @simplewebauthn/browser installed in the frontend project.        */
 /* ------------------------------------------------------------------ */
 
+async function postJSON(path, body) {
+  const res = await fetch(path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "same-origin",
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const err = new Error(data.error || data.message || "request_failed");
+    err.code = data.error;
+    throw err;
+  }
+  return data;
+}
+
+// Lazy-load the WebAuthn browser helpers so the library UI still renders
+// even if the package isn't present (e.g. static preview without a backend).
+async function webauthn() {
+  const mod = await import("@simplewebauthn/browser");
+  return mod;
+}
+
+async function apiRegister(username) {
+  const options = await postJSON("/api/auth/register/options", { username });
+  const { startRegistration } = await webauthn();
+  const attResp = await startRegistration({ optionsJSON: options });
+  return postJSON("/api/auth/register/verify", { username, attResp });
+}
+
+async function apiLogin(username) {
+  const options = await postJSON("/api/auth/login/options", { username });
+  const { startAuthentication } = await webauthn();
+  const authResp = await startAuthentication({ optionsJSON: options });
+  return postJSON("/api/auth/login/verify", { username, authResp });
+}
+
+async function apiMe() {
+  const res = await fetch("/api/auth/me", { credentials: "same-origin" });
+  if (!res.ok) return null;
+  return (await res.json()).user;
+}
+
+async function apiLogout() {
+  return postJSON("/api/auth/logout");
+}
+
+async function apiAdminList() {
+  const res = await fetch("/api/admin/users", { credentials: "same-origin" });
+  if (!res.ok) throw new Error("admin_only");
+  return (await res.json()).users;
+}
+
+async function apiAdminSetStatus(userId, status) {
+  return postJSON("/api/admin/set-status", { userId, status });
+}
 export default function SanatanaGuide() {
   const mountRef = useRef(null);
   const chatEndRef = useRef(null);
@@ -296,6 +899,17 @@ export default function SanatanaGuide() {
   const [dockOpen, setDockOpen] = useState(false);
   const [unread, setUnread] = useState(false);
 
+  // i18n + auth + admin state
+  const [lang, setLang] = useState("en");
+  const [user, setUser] = useState(null); // null = signed out
+  const [authMode, setAuthMode] = useState("register"); // 'register' | 'login'
+  const [authName, setAuthName] = useState("");
+  const [authBusy, setAuthBusy] = useState(false);
+  const [authError, setAuthError] = useState(null);
+  const [authNote, setAuthNote] = useState(null);
+  const [limitReached, setLimitReached] = useState(false);
+  const [showAdmin, setShowAdmin] = useState(false);
+  const [adminUsers, setAdminUsers] = useState([]);
   /* ---------------- three.js: the breathing bindu-mandala ---------- */
   useEffect(() => {
     const container = mountRef.current;
@@ -565,26 +1179,140 @@ export default function SanatanaGuide() {
     }
   }, [messages, loading, dockOpen]);
 
+
+  /* ---------------- i18n helper ------------------------------------ */
+  const t = (key) => (STRINGS[lang] && STRINGS[lang][key]) || STRINGS.en[key] || key;
+
+  /* ---------------- auth ------------------------------------------- */
+
+  // Check for an existing session on mount.
+  useEffect(() => {
+    let alive = true;
+    apiMe()
+      .then((u) => {
+        if (alive) setUser(u);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const doRegister = async () => {
+    const name = authName.trim();
+    if (!name || authBusy) return;
+    setAuthBusy(true);
+    setAuthError(null);
+    setAuthNote(null);
+    try {
+      const r = await apiRegister(name);
+      setUser(r.user);
+      setLimitReached(false);
+      if (r.note) setAuthNote(r.note);
+    } catch (e) {
+      setAuthError(e.code === "conflict" || /taken/i.test(e.message) ? t("auth_err_taken") : t("auth_err_generic"));
+    } finally {
+      setAuthBusy(false);
+    }
+  };
+
+  const doLogin = async () => {
+    const name = authName.trim();
+    if (!name || authBusy) return;
+    setAuthBusy(true);
+    setAuthError(null);
+    setAuthNote(null);
+    try {
+      const r = await apiLogin(name);
+      setUser(r.user);
+      setLimitReached(false);
+    } catch (e) {
+      setAuthError(t("auth_err_generic"));
+    } finally {
+      setAuthBusy(false);
+    }
+  };
+
+  const doLogout = async () => {
+    try {
+      await apiLogout();
+    } catch (e) {
+      /* ignore */
+    }
+    setUser(null);
+    setShowAdmin(false);
+    setAdminUsers([]);
+    setLimitReached(false);
+  };
+
+  /* ---------------- admin ------------------------------------------ */
+  const loadAdmin = async () => {
+    try {
+      const rows = await apiAdminList();
+      setAdminUsers(rows);
+    } catch (e) {
+      /* not admin or unavailable */
+    }
+  };
+
+  const openAdmin = () => {
+    setShowAdmin(true);
+    loadAdmin();
+  };
+
+  const setStatus = async (userId, status) => {
+    try {
+      await apiAdminSetStatus(userId, status);
+      loadAdmin();
+    } catch (e) {
+      /* ignore */
+    }
+  };
+
+  /* ---------------- chat ------------------------------------------- */
   const send = async (preset) => {
     const content = (preset != null ? preset : input).trim();
     if (!content || loading) return;
+
+    // Must be signed in to ask.
+    if (!user) {
+      openDock();
+      setAuthError(null);
+      return;
+    }
+
     const next = [...messages, { role: "user", content }];
     setMessages(next);
     setInput("");
     setLoading(true);
     setError(null);
     try {
+      // The server owns the system prompt, model, and token limits — the
+      // browser sends only the conversation, the provider, and the language.
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
         body: JSON.stringify({
           provider: "anthropic",
-          model: "claude-sonnet-5",
-          max_tokens: 1000,
-          system: SYSTEM_PROMPT,
+          lang,
           messages: next.map((m) => ({ role: m.role, content: m.content })),
         }),
       });
+
+      if (res.status === 401) {
+        // Session expired or missing — send back to the auth gate.
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+      if (res.status === 403) {
+        // Free-question limit hit; show the request-access state.
+        setLimitReached(true);
+        setLoading(false);
+        return;
+      }
+
       const data = await res.json();
       const reply = (data.content || [])
         .filter((b) => b.type === "text")
@@ -595,7 +1323,7 @@ export default function SanatanaGuide() {
       setMessages([...next, { role: "assistant", content: reply }]);
       if (!dockOpenRef.current) setUnread(true);
     } catch (e) {
-      setError("The guide could not be reached. Ask again in a moment.");
+      setError(t("dock_error"));
     } finally {
       setLoading(false);
     }
@@ -615,10 +1343,11 @@ export default function SanatanaGuide() {
   };
 
   const tabs = [
-    { id: "vedas", label: "The Four Vedas", tag: "śruti" },
-    { id: "upanishads", label: "Upaniṣads", tag: "śruti" },
-    { id: "smriti", label: "Smṛti Texts", tag: "smṛti" },
-    { id: "sources", label: "Complete Texts", tag: "links" },
+    { id: "vedas", label: t("lib_tab_vedas"), tag: "śruti" },
+    { id: "upanishads", label: t("lib_tab_upanishads"), tag: "śruti" },
+    { id: "upavedas", label: t("lib_tab_upavedas"), tag: "aṅga" },
+    { id: "smriti", label: t("lib_tab_smriti"), tag: "smṛti" },
+    { id: "sources", label: t("lib_tab_sources"), tag: "links" },
   ];
 
   const renderGuideMessage = (content) => {
@@ -628,13 +1357,15 @@ export default function SanatanaGuide() {
         {body}
         {example && (
           <div className="msg-example">
-            <strong>In practice</strong>
+            <strong>{IN_PRACTICE_LABELS[lang] || "In practice"}</strong>
             {example}
           </div>
         )}
       </React.Fragment>
     );
   };
+
+  const canAsk = user && (user.status === "allowlisted" || !limitReached);
 
   /* ---------------- render ----------------------------------------- */
   return (
@@ -971,6 +1702,101 @@ export default function SanatanaGuide() {
         .footer .om-close { font-family: var(--deva); color: var(--ember); font-size: 30px; }
         .footer p { color: var(--ash); max-width: 58ch; margin: 18px auto 0; font-size: 17.5px; }
         .footer .fine { font-family: var(--mono); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; margin-top: 34px; color: rgba(154,149,175,0.6); }
+
+        /* ---------- language switcher ---------- */
+        .lang-switch { display: flex; align-items: center; gap: 6px; }
+        .lang-switch .lang-label {
+          font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em;
+          text-transform: uppercase; color: var(--ash); margin-right: 2px;
+        }
+        .lang-btn {
+          background: transparent; border: 1px solid var(--line); color: var(--ash);
+          border-radius: 999px; padding: 4px 11px; font-size: 13px;
+          font-family: var(--deva); transition: all 0.18s;
+        }
+        .lang-btn:hover { border-color: var(--ember); color: var(--manuscript); }
+        .lang-btn.active { background: var(--ember-soft); border-color: var(--ember); color: var(--ember); }
+        @media (max-width: 720px) {
+          .nav-lang-desktop { display: none; }
+        }
+        .dock-lang { display: flex; gap: 5px; flex-wrap: wrap; padding: 10px 16px 0; }
+        .dock-lang .lang-btn { padding: 3px 10px; font-size: 12px; }
+
+        /* ---------- auth gate ---------- */
+        .auth {
+          padding: 26px 20px 22px; text-align: center;
+        }
+        .auth .om-big { font-family: var(--deva); font-size: 40px; color: var(--ember); display: block; margin-bottom: 12px; }
+        .auth h3 { font-family: var(--display); font-weight: 400; font-size: 22px; margin-bottom: 10px; }
+        .auth p { color: var(--ash); font-size: 15.5px; max-width: 34ch; margin: 0 auto 18px; line-height: 1.5; }
+        .auth-field {
+          width: 100%; background: rgba(11,10,20,0.5); border: 1px solid var(--line);
+          color: #EDE9F5; font-family: var(--body); font-size: 17px;
+          border-radius: 4px; padding: 12px 14px; margin-bottom: 12px;
+        }
+        .auth-field::placeholder { color: rgba(154,149,175,0.7); }
+        .auth-field:focus { outline: none; border-color: var(--ember); }
+        .auth .btn { width: 100%; text-align: center; }
+        .auth-switch {
+          margin-top: 16px; font-size: 14px; color: var(--ash);
+        }
+        .auth-switch button {
+          background: transparent; border: none; color: var(--ember);
+          font: inherit; text-decoration: underline; text-underline-offset: 3px; cursor: pointer;
+        }
+        .auth-error { color: #E88A6A; font-size: 14.5px; margin-bottom: 12px; }
+        .auth-note { color: var(--ember); font-size: 14.5px; margin-top: 12px; }
+
+        /* signed-in identity row inside the dock header area */
+        .dock-id {
+          display: flex; align-items: center; gap: 8px; padding: 8px 16px;
+          border-bottom: 1px solid var(--line); font-size: 13px; color: var(--ash);
+        }
+        .dock-id .who { flex: 1; }
+        .dock-id .who b { color: var(--manuscript); font-weight: 500; }
+        .dock-id .tag-admin {
+          font-family: var(--mono); font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase;
+          color: var(--ember); border: 1px solid var(--ember); border-radius: 999px; padding: 2px 7px;
+        }
+        .dock-id button {
+          background: transparent; border: none; color: var(--ash);
+          font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;
+          cursor: pointer;
+        }
+        .dock-id button:hover { color: var(--ember); }
+
+        /* limit-reached state */
+        .limit-box { text-align: center; padding: 26px 20px; }
+        .limit-box h3 { font-family: var(--display); font-weight: 400; font-size: 21px; color: var(--ember); margin-bottom: 10px; }
+        .limit-box p { color: var(--ash); font-size: 15.5px; max-width: 34ch; margin: 0 auto; line-height: 1.5; }
+
+        /* ---------- admin panel ---------- */
+        .admin {
+          position: fixed; inset: 0; z-index: 100;
+          background: rgba(11,10,20,0.82); backdrop-filter: blur(6px);
+          display: flex; align-items: center; justify-content: center; padding: 20px;
+        }
+        .admin-card {
+          width: min(680px, 100%); max-height: 82vh; overflow-y: auto;
+          background: var(--raised); border: 1px solid var(--line); border-radius: 10px;
+          padding: 26px 26px 22px; box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+        }
+        .admin-head { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+        .admin-head h3 { font-family: var(--display); font-weight: 400; font-size: 24px; flex: 1; }
+        .admin-table { width: 100%; border-collapse: collapse; font-size: 15px; }
+        .admin-table th {
+          text-align: left; font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em;
+          text-transform: uppercase; color: var(--ash); padding: 8px 10px; border-bottom: 1px solid var(--line);
+        }
+        .admin-table td { padding: 10px; border-bottom: 1px solid rgba(232,163,61,0.08); color: #EDE9F5; }
+        .admin-table td .uname { font-weight: 500; }
+        .status-pill {
+          font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase;
+          padding: 3px 9px; border-radius: 999px; border: 1px solid var(--line);
+        }
+        .status-pill.allowlisted { color: var(--ember); border-color: var(--ember); background: var(--ember-soft); }
+        .status-pill.pending { color: var(--ash); }
+        .admin-empty { color: var(--ash); font-style: italic; padding: 20px 0; text-align: center; }
       `}</style>
 
       {/* ------------------------------ nav ------------------------- */}
@@ -979,14 +1805,28 @@ export default function SanatanaGuide() {
           <span className="om-mark">ॐ</span> SANĀTANA
         </div>
         <div className="nav-links">
-          <a href="#reading">The Way of Reading</a>
+          <a href="#reading">{t("nav_reading")}</a>
           <button className="nav-ask" onClick={openDock}>
-            Ask the Guide
+            {t("nav_ask")}
           </button>
-          <a href="#library">The Library</a>
+          <a href="#library">{t("nav_library")}</a>
           <a href="#sources" onClick={() => setTab("sources")}>
-            Sources
+            {t("nav_sources")}
           </a>
+          <span className="lang-switch nav-lang-desktop">
+            <span className="lang-label">{t("lang_label")}</span>
+            {LANGUAGES.map((l) => (
+              <button
+                key={l.id}
+                className={`lang-btn ${lang === l.id ? "active" : ""}`}
+                onClick={() => setLang(l.id)}
+                aria-pressed={lang === l.id}
+                title={l.label}
+              >
+                {l.native}
+              </button>
+            ))}
+          </span>
         </div>
       </nav>
 
@@ -996,94 +1836,67 @@ export default function SanatanaGuide() {
         <div className="hero-veil" />
         <div className="hero-copy">
           <span className="eyebrow">
-            <span className="om deva">नासदीय सूक्त</span> · Ṛg Veda 10.129
+            <span className="om deva">नासदीय सूक्त</span> · {t("hero_eyebrow_ref")}
           </span>
-          <h1>Before being and non-being, there was the question.</h1>
-          <p className="sub">
-            A guide that carries the essence of the Vedas — and knows the
-            difference between what is eternal and what was written for its
-            time.
-          </p>
+          <h1>{t("hero_title")}</h1>
+          <p className="sub">{t("hero_sub")}</p>
           <div className="hero-ctas">
             <button className="btn" onClick={openDock}>
-              Ask the guide
+              {t("hero_cta_ask")}
             </button>
             <a className="btn ghost" href="#library">
-              Read the sources
+              {t("hero_cta_read")}
             </a>
           </div>
         </div>
-        <div className="hero-scroll">scroll ↓</div>
+        <div className="hero-scroll">{t("hero_scroll")}</div>
       </header>
 
       {/* --------------------------- reading method ----------------- */}
       <section className="section" id="reading">
         <div className="shell">
           <div className="section-head">
-            <span className="eyebrow">The method</span>
-            <h2>How this guide reads five thousand years of text</h2>
-            <p className="lede">
-              The tradition itself gives us the tools. Not everything in the
-              corpus makes the same kind of claim — and the texts say so.
-            </p>
+            <span className="eyebrow">{t("method_eyebrow")}</span>
+            <h2>{t("method_title")}</h2>
+            <p className="lede">{t("method_lede")}</p>
           </div>
 
           <div className="method">
             <div className="method-card">
               <span className="step deva">॥ १ ॥</span>
-              <h3>Hear what is eternal</h3>
-              <span className="gloss">śruti — that which was heard</span>
-              <p>
-                The Vedas and Upaniṣads speak of consciousness, dharma, and the
-                Self — claims meant to hold in any century. This is the layer
-                the guide treats as principle.
-              </p>
+              <h3>{t("method1_h")}</h3>
+              <span className="gloss">{t("method1_gloss")}</span>
+              <p>{t("method1_p")}</p>
               <div className="method-eg">
-                <strong>In practice</strong>
-                Gravity was true before anyone named it. "You are not your
-                thoughts" is that kind of claim — a description of how things
-                are, not a rule of any era.
+                <strong>{IN_PRACTICE_LABELS[lang] || "In practice"}</strong>
+                {t("method1_eg")}
               </div>
             </div>
             <div className="method-card">
               <span className="step deva">॥ २ ॥</span>
-              <h3>Place what was written for its time</h3>
-              <span className="gloss">smṛti — that which is remembered</span>
-              <p>
-                The Gītā, epics, Purāṇas, and law codes like the Manusmṛti
-                applied those principles to ancient societies. Manu 1.85 admits
-                it: dharma differs by age. When smṛti conflicts with śruti,
-                the tradition's own rule is that śruti prevails.
-              </p>
+              <h3>{t("method2_h")}</h3>
+              <span className="gloss">{t("method2_gloss")}</span>
+              <p>{t("method2_p")}</p>
               <div className="method-eg">
-                <strong>In practice</strong>
-                Think of a company handbook from 1975 — sincere, binding in its
-                day, absurd for judging remote work. Keep its concern for
-                fairness; retire its clauses.
+                <strong>{IN_PRACTICE_LABELS[lang] || "In practice"}</strong>
+                {t("method2_eg")}
               </div>
             </div>
             <div className="method-card">
               <span className="step deva">॥ ३ ॥</span>
-              <h3>Carry the essence forward</h3>
-              <span className="gloss">deśa · kāla · pātra</span>
-              <p>
-                Place, time, person. A rule was calibrated to its
-                circumstance; the principle beneath it travels. The guide keeps
-                the question a text was answering, not the answer frozen in its
-                era.
-              </p>
+              <h3>{t("method3_h")}</h3>
+              <span className="gloss">{t("method3_gloss")}</span>
+              <p>{t("method3_p")}</p>
               <div className="method-eg">
-                <strong>In practice</strong>
-                "Don't overload the bullock cart" becomes "don't overload the
-                truck." The vehicle changed; the care behind the rule didn't.
+                <strong>{IN_PRACTICE_LABELS[lang] || "In practice"}</strong>
+                {t("method3_eg")}
               </div>
             </div>
           </div>
 
           <div className="method-note">
-            The seers wrote in story and symbol so a farmer and a philosopher
-            could carry the same truth at different depths.{" "}
-            <em>To read literally is to read less, not more.</em>
+            {t("method_note_pre")}
+            <em>{t("method_note_em")}</em>
           </div>
         </div>
       </section>
@@ -1096,13 +1909,10 @@ export default function SanatanaGuide() {
       <section className="section" id="ask">
         <div className="shell" style={{ maxWidth: 820 }}>
           <div className="section-head" style={{ textAlign: "center" }}>
-            <span className="eyebrow">The guide</span>
-            <h2>Ask anything. Get the essence, not the dogma.</h2>
+            <span className="eyebrow">{t("ask_eyebrow")}</span>
+            <h2>{t("ask_title")}</h2>
             <p className="lede" style={{ margin: "14px auto 0" }}>
-              Everyday questions welcome — work, anger, grief, purpose. The
-              guide answers from the texts, cites its sources, closes with a
-              real-world example, and tells you when a rule belonged to
-              another age.
+              {t("ask_lede")}
             </p>
           </div>
 
@@ -1110,13 +1920,9 @@ export default function SanatanaGuide() {
             <span className="om-big" aria-hidden="true">
               ॐ
             </span>
-            <p>
-              The guide floats with you now. Open it from the glowing bindu in
-              the corner and it stays at your side while you scroll and read —
-              drag it anywhere on the screen.
-            </p>
+            <p>{t("launcher_p")}</p>
             <button className="btn" onClick={openDock}>
-              Open the guide
+              {t("launcher_open")}
             </button>
             <div className="chips">
               {SUGGESTIONS.map((s) => (
@@ -1138,26 +1944,22 @@ export default function SanatanaGuide() {
       <section className="section library" id="library">
         <div className="shell">
           <div className="section-head">
-            <span className="eyebrow">The library</span>
-            <h2>The sources, laid open</h2>
-            <p className="lede">
-              A curated map of the corpus — what each text is, when it arose,
-              and one verse that carries its heart. Complete canonical texts
-              are linked under Complete Texts.
-            </p>
+            <span className="eyebrow">{t("lib_eyebrow")}</span>
+            <h2>{t("lib_title")}</h2>
+            <p className="lede">{t("lib_lede")}</p>
           </div>
 
           <div className="lib-tabs" role="tablist" id="sources">
-            {tabs.map((t) => (
+            {tabs.map((tb) => (
               <button
-                key={t.id}
+                key={tb.id}
                 role="tab"
-                aria-selected={tab === t.id}
-                className={`lib-tab ${tab === t.id ? "active" : ""}`}
-                onClick={() => setTab(t.id)}
+                aria-selected={tab === tb.id}
+                className={`lib-tab ${tab === tb.id ? "active" : ""}`}
+                onClick={() => setTab(tb.id)}
               >
-                {t.label}
-                <span className="t">· {t.tag}</span>
+                {tb.label}
+                <span className="t">· {tb.tag}</span>
               </button>
             ))}
           </div>
@@ -1177,7 +1979,7 @@ export default function SanatanaGuide() {
                   </div>
                   {item.context && (
                     <div className="context-note">
-                      <strong>Reading in time</strong>
+                      <strong>{t("lib_reading_in_time")}</strong>
                       {item.context}
                     </div>
                   )}
@@ -1196,38 +1998,29 @@ export default function SanatanaGuide() {
                     <p>{s.desc}</p>
                   </div>
                   <a className="go" href={s.url} target="_blank" rel="noreferrer">
-                    Open archive →
+                    {t("lib_open_archive")}
                   </a>
                 </div>
               ))}
             </div>
           )}
 
-          <p className="lib-disclaimer">
-            Renderings above are plain-language glosses meant to open a door,
-            not settle a scholarly question. Dates are approximate and debated;
-            the tradition is older than any manuscript of it.
-          </p>
+          <p className="lib-disclaimer">{t("lib_disclaimer")}</p>
         </div>
       </section>
 
       {/* ---------------------------- footer ------------------------ */}
       <footer className="footer">
         <div className="om-close">॥ ॐ शान्तिः शान्तिः शान्तिः ॥</div>
-        <p>
-          Sanātana interprets; it does not pronounce. Schools of Vedānta
-          disagree with one another, scholars dispute dates and readings, and
-          the guide will tell you when they do. Where the texts say the same
-          Self dwells in all beings, that is where this guide stands.
-        </p>
-        <div className="fine">śruti · smṛti · viveka — built with three.js & Claude</div>
+        <p>{t("footer_p")}</p>
+        <div className="fine">{t("footer_fine")}</div>
       </footer>
 
       {/* ----------------- floating guide dock + bindu --------------- */}
       <div
         className={`dock ${dockOpen ? "open" : ""}`}
         role="dialog"
-        aria-label="Sanātana — ask the guide"
+        aria-label="Sanātana"
         ref={panelRef}
       >
         <div className="dock-head" onPointerDown={startDrag}>
@@ -1237,81 +2030,243 @@ export default function SanatanaGuide() {
           <button
             className="dock-min"
             onClick={() => setDockOpen(false)}
-            aria-label="Minimize the guide"
-            title="Minimize (Esc)"
+            aria-label={t("dock_minimize")}
+            title={t("dock_minimize")}
           >
             —
           </button>
         </div>
 
-        <div className="dock-log" aria-live="polite">
-          {messages.length === 0 && !loading && (
-            <div className="chat-empty">
-              <span className="om-big">ॐ</span>
-              Begin with whatever is actually on your mind.
-              <br />
-              The guide will meet you there.
-            </div>
-          )}
-          {messages.map((m, i) => (
-            <div key={i} className={`msg ${m.role === "user" ? "user" : "guide"}`}>
-              <div className="msg-bubble">
-                <span className="msg-label">
-                  {m.role === "user" ? "You" : "Sanātana"}
-                </span>
-                {m.role === "user" ? m.content : renderGuideMessage(m.content)}
-              </div>
-            </div>
+        {/* language row */}
+        <div className="dock-lang">
+          {LANGUAGES.map((l) => (
+            <button
+              key={l.id}
+              className={`lang-btn ${lang === l.id ? "active" : ""}`}
+              onClick={() => setLang(l.id)}
+              aria-pressed={lang === l.id}
+              title={l.label}
+            >
+              {l.native}
+            </button>
           ))}
-          {loading && (
-            <div className="chat-wait">
-              <span className="pulse" /> consulting the texts…
-            </div>
-          )}
-          <div ref={chatEndRef} />
         </div>
 
-        {error && <div className="chat-error">{error}</div>}
-
-        {messages.length === 0 && !loading && (
-          <div className="dock-chips">
-            {SUGGESTIONS.slice(0, 3).map((s) => (
-              <button key={s} className="chip" onClick={() => send(s)}>
-                {s}
-              </button>
-            ))}
+        {/* signed-in identity / admin entry */}
+        {user && (
+          <div className="dock-id">
+            <span className="who">
+              <b>{user.username}</b>
+              {user.role === "admin" && <span className="tag-admin"> admin</span>}
+            </span>
+            {user.role === "admin" && (
+              <button onClick={openAdmin}>{t("admin_title")}</button>
+            )}
+            <button onClick={doLogout}>{t("auth_signout")}</button>
           </div>
         )}
 
-        <div className="dock-input">
-          <textarea
-            ref={inputRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={onKeyDown}
-            placeholder="Ask the guide…"
-            aria-label="Your question for the guide"
-            rows={1}
-          />
-          <button
-            className="btn small"
-            onClick={() => send()}
-            disabled={loading || !input.trim()}
-          >
-            Ask
-          </button>
-        </div>
+        {/* body: auth gate, or limit state, or the chat */}
+        {!user ? (
+          <div className="auth">
+            <span className="om-big" aria-hidden="true">
+              ॐ
+            </span>
+            <h3>
+              {authMode === "register" ? t("auth_gate_title") : t("auth_signin_title")}
+            </h3>
+            <p>{authMode === "register" ? t("auth_gate_p") : t("auth_signin_p")}</p>
+            {authError && <div className="auth-error">{authError}</div>}
+            <input
+              className="auth-field"
+              value={authName}
+              onChange={(e) => setAuthName(e.target.value)}
+              placeholder={t("auth_username")}
+              aria-label={t("auth_username")}
+              onKeyDown={(e) => {
+                if (e.key === "Enter")
+                  authMode === "register" ? doRegister() : doLogin();
+              }}
+            />
+            <button
+              className="btn"
+              onClick={authMode === "register" ? doRegister : doLogin}
+              disabled={authBusy || !authName.trim()}
+            >
+              {authBusy
+                ? t("auth_working")
+                : authMode === "register"
+                ? t("auth_register")
+                : t("auth_login")}
+            </button>
+            {authNote && <div className="auth-note">{authNote}</div>}
+            <div className="auth-switch">
+              {authMode === "register" ? (
+                <React.Fragment>
+                  {t("auth_have")}{" "}
+                  <button onClick={() => { setAuthMode("login"); setAuthError(null); }}>
+                    {t("auth_login")}
+                  </button>
+                </React.Fragment>
+              ) : (
+                <React.Fragment>
+                  {t("auth_need_account")}{" "}
+                  <button onClick={() => { setAuthMode("register"); setAuthError(null); }}>
+                    {t("auth_register")}
+                  </button>
+                </React.Fragment>
+              )}
+            </div>
+          </div>
+        ) : limitReached && user.status !== "allowlisted" ? (
+          <div className="limit-box">
+            <h3>{t("auth_limit_title")}</h3>
+            <p>{t("auth_limit_p")}</p>
+          </div>
+        ) : (
+          <React.Fragment>
+            <div className="dock-log" aria-live="polite">
+              {user.status !== "allowlisted" && messages.length === 0 && !loading && (
+                <div className="chat-empty" style={{ paddingBottom: 14 }}>
+                  {t("auth_pending_note")}
+                </div>
+              )}
+              {messages.length === 0 && !loading && (
+                <div className="chat-empty">
+                  <span className="om-big">ॐ</span>
+                  {t("dock_empty_1")}
+                  <br />
+                  {t("dock_empty_2")}
+                </div>
+              )}
+              {messages.map((m, i) => (
+                <div key={i} className={`msg ${m.role === "user" ? "user" : "guide"}`}>
+                  <div className="msg-bubble">
+                    <span className="msg-label">
+                      {m.role === "user" ? t("label_you") : "Sanātana"}
+                    </span>
+                    {m.role === "user" ? m.content : renderGuideMessage(m.content)}
+                  </div>
+                </div>
+              ))}
+              {loading && (
+                <div className="chat-wait">
+                  <span className="pulse" /> {t("dock_consulting")}
+                </div>
+              )}
+              <div ref={chatEndRef} />
+            </div>
+
+            {error && <div className="chat-error">{error}</div>}
+
+            {messages.length === 0 && !loading && (
+              <div className="dock-chips">
+                {SUGGESTIONS.slice(0, 3).map((s) => (
+                  <button key={s} className="chip" onClick={() => send(s)}>
+                    {s}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <div className="dock-input">
+              <textarea
+                ref={inputRef}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={onKeyDown}
+                placeholder={t("dock_placeholder")}
+                aria-label={t("dock_placeholder")}
+                rows={1}
+              />
+              <button
+                className="btn small"
+                onClick={() => send()}
+                disabled={loading || !input.trim()}
+              >
+                {t("dock_send")}
+              </button>
+            </div>
+          </React.Fragment>
+        )}
       </div>
 
       <button
         className={`fab ${dockOpen ? "hidden" : ""}`}
         onClick={openDock}
-        aria-label="Open the guide"
-        title="Ask the guide"
+        aria-label={t("nav_ask")}
+        title={t("nav_ask")}
       >
         <span aria-hidden="true">ॐ</span>
         {unread && <span className="fab-dot" aria-hidden="true" />}
       </button>
+
+      {/* ----------------------- admin panel ------------------------ */}
+      {showAdmin && user && user.role === "admin" && (
+        <div className="admin" onClick={() => setShowAdmin(false)}>
+          <div className="admin-card" onClick={(e) => e.stopPropagation()}>
+            <div className="admin-head">
+              <h3>{t("admin_title")}</h3>
+              <button className="btn small ghost" onClick={loadAdmin}>
+                {t("admin_refresh")}
+              </button>
+              <button className="dock-min" onClick={() => setShowAdmin(false)} aria-label="close">
+                ✕
+              </button>
+            </div>
+            {adminUsers.length === 0 ? (
+              <div className="admin-empty">{t("admin_empty")}</div>
+            ) : (
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>{t("admin_col_user")}</th>
+                    <th>{t("admin_col_status")}</th>
+                    <th>{t("admin_col_used")}</th>
+                    <th>{t("admin_col_action")}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {adminUsers.map((u) => (
+                    <tr key={u.id}>
+                      <td>
+                        <span className="uname">{u.username}</span>
+                        {u.role === "admin" && <span className="tag-admin"> admin</span>}
+                      </td>
+                      <td>
+                        <span className={`status-pill ${u.status}`}>
+                          {u.status === "allowlisted"
+                            ? t("admin_status_allowlisted")
+                            : t("admin_status_pending")}
+                        </span>
+                      </td>
+                      <td>{u.questions_used}</td>
+                      <td>
+                        {u.role !== "admin" &&
+                          (u.status === "allowlisted" ? (
+                            <button
+                              className="btn small ghost"
+                              onClick={() => setStatus(u.id, "pending")}
+                            >
+                              {t("admin_revoke")}
+                            </button>
+                          ) : (
+                            <button
+                              className="btn small"
+                              onClick={() => setStatus(u.id, "allowlisted")}
+                            >
+                              {t("admin_approve")}
+                            </button>
+                          ))}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

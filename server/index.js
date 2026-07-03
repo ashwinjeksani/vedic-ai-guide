@@ -11,7 +11,7 @@ import {
   me,
   logout,
 } from "./auth.js";
-import { chat, adminListUsers, adminSetStatus } from "./routes.js";
+import { chat, adminListUsers, adminSetStatus, adminGuardLog } from "./routes.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -43,6 +43,7 @@ app.post("/api/chat", chat);
 // --- admin ---
 app.get("/api/admin/users", adminListUsers);
 app.post("/api/admin/set-status", adminSetStatus);
+app.get("/api/admin/guard-log", adminGuardLog);
 
 // --- static frontend (the built Vite app) ---
 const publicDir = join(__dirname, "..", "public");
