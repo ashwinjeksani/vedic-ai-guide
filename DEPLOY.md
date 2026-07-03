@@ -23,7 +23,7 @@ vedic-deploy/
 - **Anyone can register** a passkey with a username.
 - The **first account to register becomes admin** (or set `ADMIN_USERNAME` to
   claim a specific name). Admins are auto-allowlisted.
-- **Pending (non-allowlisted) users** get `FREE_LIMIT` questions (default: 1),
+- **Pending (non-allowlisted) users** get `FREE_LIMIT` questions (default: 10),
   then `/api/chat` returns `403 limit_reached`.
 - **Allowlisted users** are unlimited.
 - The **admin approves people** from `/api/admin/users` — flip a user to

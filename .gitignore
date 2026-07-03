@@ -3,6 +3,8 @@ dist/
 .env
 .dev-server.pid
 .dev-server.log
+.api-server.pid
+.api-server.log
 
 # built frontend copied into the server for deploy
 public/

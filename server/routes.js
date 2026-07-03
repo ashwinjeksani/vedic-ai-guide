@@ -1,3 +1,4 @@
+import { randomUUID } from "crypto";
 import db from "./db.js";
 import { currentUser } from "./auth.js";
 import { SYSTEM_PROMPT, LANG_REPLY_INSTRUCTION, SUPPORTED_LANGS } from "./prompt.js";
@@ -9,7 +10,10 @@ import {
   logBlocked,
 } from "./guardrails.js";
 
-const FREE_LIMIT = parseInt(process.env.FREE_LIMIT || "1", 10);
+// Anyone who isn't allowlisted (guest OR registered-but-pending) may ask up to
+// GUEST_DAILY_LIMIT questions per rolling 24 hours, counted per unique subject.
+const GUEST_DAILY_LIMIT = parseInt(process.env.GUEST_DAILY_LIMIT || "10", 10);
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 const MODELS = {
   anthropic: "claude-sonnet-5",
@@ -17,13 +21,34 @@ const MODELS = {
 };
 const MAX_TOKENS = 1000;
 
+// A guest is identified by a signed httpOnly cookie so the daily count sticks
+// to a browser without requiring an account. Clearing cookies resets it — an
+// accepted limitation for anonymous access (registering + allowlist is the
+// path to unlimited).
+function guestId(req, res) {
+  let gid = req.signedCookies?.gid;
+  if (!gid) {
+    gid = "guest_" + randomUUID();
+    res.cookie("gid", gid, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      signed: true,
+      maxAge: DAY_MS * 400,
+      path: "/",
+    });
+  }
+  return gid;
+}
+
 /* --------------------------- the gated proxy ----------------------------- */
 /*
  * Access rules, enforced here on the SERVER so they can't be bypassed from
  * the browser:
- *   - Not logged in            -> 401 (must register a passkey first)
+ *   - Guest (not logged in)    -> up to GUEST_DAILY_LIMIT questions / 24h
+ *   - Logged in + pending      -> up to GUEST_DAILY_LIMIT questions / 24h
  *   - Logged in + allowlisted  -> unlimited
- *   - Logged in + pending      -> up to FREE_LIMIT questions, then 403
+ * When the daily limit is hit -> 403 limit_reached.
  *
  * Prompt-injection hardening (see guardrails.js for the full layer map):
  *   - The client can send ONLY { provider, lang, messages }. Any `system`,
@@ -38,18 +63,26 @@ const MAX_TOKENS = 1000;
  */
 export async function chat(req, res) {
   const user = currentUser(req);
-  if (!user) {
-    return res.status(401).json({ error: "login_required", message: "Register a passkey to ask the guide." });
-  }
 
-  if (user.status !== "allowlisted") {
+  // Identify the asker: a signed-in user, or an anonymous guest (cookie id).
+  const subjectId = user ? user.id : guestId(req, res);
+  const isGuest = !user;
+  const allowlisted = user?.status === "allowlisted";
+
+  // Rate-limit everyone who isn't allowlisted to GUEST_DAILY_LIMIT / 24h.
+  if (!allowlisted) {
+    const since = Date.now() - DAY_MS;
     const used = db
-      .prepare("SELECT COUNT(*) AS n FROM request_log WHERE user_id = ?")
-      .get(user.id).n;
-    if (used >= FREE_LIMIT) {
+      .prepare("SELECT COUNT(*) AS n FROM request_log WHERE user_id = ? AND created_at >= ?")
+      .get(subjectId, since).n;
+    if (used >= GUEST_DAILY_LIMIT) {
       return res.status(403).json({
         error: "limit_reached",
-        message: "You've used your free question. Ask the admin for full access.",
+        message: isGuest
+          ? `You've reached today's ${GUEST_DAILY_LIMIT} free questions. Register a passkey and ask the admin for unlimited access.`
+          : `You've used today's ${GUEST_DAILY_LIMIT} questions. Ask the admin for unlimited access.`,
+        limit: GUEST_DAILY_LIMIT,
+        isGuest,
         canRequestAccess: true,
       });
     }
@@ -61,7 +94,7 @@ export async function chat(req, res) {
   // Layer 1: shape and size.
   const valid = validateChatRequest(req.body);
   if (!valid.ok) {
-    logBlocked(db, user.id, valid.error, "validate");
+    logBlocked(db, subjectId, valid.error, "validate");
     return res.status(400).json({ error: valid.error });
   }
   const messages = req.body.messages.map((m) => ({
@@ -73,7 +106,7 @@ export async function chat(req, res) {
   // without spending an upstream call or a free-limit slot.
   const screened = screenInput(messages);
   if (screened.blocked) {
-    logBlocked(db, user.id, screened.reason, "input");
+    logBlocked(db, subjectId, screened.reason, "input");
     return res.json({
       content: [{ type: "text", text: refusalFor(screened.reason, lang) }],
       guarded: true,
@@ -145,7 +178,7 @@ export async function chat(req, res) {
 
     // Layer 4: output screen - no code leaves this endpoint.
     if (looksLikeCode(text)) {
-      logBlocked(db, user.id, "coding", "output");
+      logBlocked(db, subjectId, "coding", "output");
       return res.json({
         content: [{ type: "text", text: refusalFor("coding", lang) }],
         guarded: true,
@@ -154,7 +187,7 @@ export async function chat(req, res) {
 
     // Only count the request once it actually succeeded.
     db.prepare("INSERT INTO request_log (user_id, created_at) VALUES (?, ?)").run(
-      user.id,
+      subjectId,
       Date.now()
     );
 

@@ -28,8 +28,8 @@ services:
         value: /var/data/sanatana.db
       - key: PORT
         value: "10000"
-      - key: FREE_LIMIT
-        value: "1"
+      - key: GUEST_DAILY_LIMIT
+        value: "10"
       # ----- set these in the dashboard (Environment tab), not in git -----
       - key: RP_ID
         sync: false # e.g. sanatana.yourdomain.com

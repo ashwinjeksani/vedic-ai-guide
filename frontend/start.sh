@@ -1,30 +1,56 @@
 #!/usr/bin/env bash
-# Start the vedic-guide dev server in the background.
+# Start the full local stack in the background:
+#   - the Express API server (auth, guest limits, guardrails, model proxy) on :8787
+#   - the Vite dev server (UI + HMR) on :5173, proxying /api to the API server
+#
+# Passkeys need a real backend and a matching ORIGIN, so both run together and
+# ORIGIN is pinned to the browser origin (http://localhost:5173).
 set -euo pipefail
 
-cd "$(dirname "$0")"
+cd "$(dirname "$0")"           # frontend/
+ROOT="$(cd .. && pwd)"
+SERVER_DIR="$ROOT/server"
 
-PID_FILE=".dev-server.pid"
-LOG_FILE=".dev-server.log"
+API_PORT="${API_PORT:-8787}"
+UI_PORT=5173
 
-# Already running?
-if [ -f "$PID_FILE" ] && kill -0 "$(cat "$PID_FILE")" 2>/dev/null; then
-  echo "Already running (PID $(cat "$PID_FILE")). See $LOG_FILE"
+API_PID_FILE=".api-server.pid"
+API_LOG_FILE=".api-server.log"
+UI_PID_FILE=".dev-server.pid"
+UI_LOG_FILE=".dev-server.log"
+
+running() { [ -f "$1" ] && kill -0 "$(cat "$1")" 2>/dev/null; }
+
+if running "$UI_PID_FILE"; then
+  echo "Already running (UI PID $(cat "$UI_PID_FILE"))."
   exit 0
 fi
 
 # Install deps on first run.
-if [ ! -d node_modules ]; then
-  echo "Installing dependencies..."
-  npm install
+[ -d node_modules ] || { echo "Installing frontend deps..."; npm install; }
+[ -d "$SERVER_DIR/node_modules" ] || { echo "Installing server deps..."; npm --prefix "$SERVER_DIR" install; }
+
+# Load API keys from frontend/.env (ANTHROPIC_API_KEY / OPENAI_API_KEY).
+if [ -f .env ]; then
+  set -a; . ./.env; set +a
 fi
 
-echo "Starting dev server..."
-nohup npm run dev -- --host >"$LOG_FILE" 2>&1 &
-echo $! >"$PID_FILE"
+echo "Starting API server on :$API_PORT ..."
+( cd "$SERVER_DIR" && \
+  PORT="$API_PORT" \
+  RP_ID="localhost" \
+  ORIGIN="http://localhost:$UI_PORT" \
+  RP_NAME="Sanatana" \
+  GUEST_DAILY_LIMIT="${GUEST_DAILY_LIMIT:-10}" \
+  ANTHROPIC_API_KEY="${ANTHROPIC_API_KEY:-}" \
+  OPENAI_API_KEY="${OPENAI_API_KEY:-}" \
+  nohup node index.js >"$SERVER_DIR/.api-server.log" 2>&1 & echo $! )  >"$API_PID_FILE"
+cp "$SERVER_DIR/.api-server.log" "$API_LOG_FILE" 2>/dev/null || true
 
-# Wait briefly and surface the URL.
+echo "Starting Vite dev server on :$UI_PORT ..."
+API_PORT="$API_PORT" nohup npm run dev >"$UI_LOG_FILE" 2>&1 &
+echo $! >"$UI_PID_FILE"
+
 sleep 2
-echo "Started (PID $(cat "$PID_FILE"))."
-grep -Eo "http://localhost:[0-9]+" "$LOG_FILE" | head -n1 || echo "Server is starting — check $LOG_FILE for the URL."
-echo "Logs: $LOG_FILE"
+echo "Started — API PID $(cat "$API_PID_FILE"), UI PID $(cat "$UI_PID_FILE")."
+echo "Open: http://localhost:$UI_PORT   |   API logs: $SERVER_DIR/.api-server.log   |   UI logs: $UI_LOG_FILE"

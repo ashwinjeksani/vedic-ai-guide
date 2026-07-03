@@ -116,11 +116,13 @@ const STRINGS = {
     auth_signin_p: "Use your passkey to continue.",
     auth_need_account: "Need an account?",
     auth_signout: "Sign out",
+    guest_label: "Guest",
+    auth_signin_optional: "Sign in / Register",
     auth_pending_note:
-      "You have limited access until an admin approves you. You can ask one question now.",
-    auth_limit_title: "You've used your free question",
+      "You're asking as a guest — up to 10 questions a day. Register a passkey and get allowlisted for unlimited access.",
+    auth_limit_title: "You've reached today's free questions",
     auth_limit_p:
-      "Ask the admin to add you to the allowlist for full access.",
+      "Guests get 10 questions a day. Register a passkey and ask the admin for unlimited access.",
     auth_admin_hello: "You are the admin.",
     auth_working: "Working…",
     auth_err_generic: "Something went wrong. Try again.",
@@ -230,6 +232,8 @@ const STRINGS = {
     auth_signin_p: "जारी रखने के लिए अपनी पासकी का उपयोग करें।",
     auth_need_account: "खाता चाहिए?",
     auth_signout: "साइन आउट",
+    guest_label: "अतिथि",
+    auth_signin_optional: "साइन इन / रजिस्टर",
     auth_pending_note:
       "व्यवस्थापक की स्वीकृति तक आपकी पहुँच सीमित है। आप अभी एक प्रश्न पूछ सकते हैं।",
     auth_limit_title: "आपने अपना निःशुल्क प्रश्न उपयोग कर लिया",
@@ -341,6 +345,8 @@ const STRINGS = {
     auth_signin_p: "కొనసాగించడానికి మీ పాస్‌కీని వాడండి.",
     auth_need_account: "ఖాతా కావాలా?",
     auth_signout: "సైన్ అవుట్",
+    guest_label: "అతిథి",
+    auth_signin_optional: "సైన్ ఇన్ / నమోదు",
     auth_pending_note:
       "నిర్వాహకుడు ఆమోదించే వరకు మీ ప్రవేశం పరిమితం. ఇప్పుడు మీరు ఒక ప్రశ్న అడగవచ్చు.",
     auth_limit_title: "మీ ఉచిత ప్రశ్నను వాడేశారు",
@@ -452,6 +458,8 @@ const STRINGS = {
     auth_signin_p: "使用你的通行密钥继续。",
     auth_need_account: "需要账户？",
     auth_signout: "登出",
+    guest_label: "访客",
+    auth_signin_optional: "登录 / 注册",
     auth_pending_note:
       "在管理员批准之前，你的访问受限。现在可以提一个问题。",
     auth_limit_title: "你已用完免费提问",
@@ -785,13 +793,65 @@ LIBRARY.upavedas = [
       "Distinct revelation streams, sometimes in tension with Vedic orthodoxy. Read them as the architecture of devotional practice; their ritual detail is bound to sect and setting, their contemplative core is broadly shared.",
   },
 ];
-const SUGGESTIONS = [
-  "Does the Manusmriti still apply today?",
-  "How do I deal with anger, according to the Gita?",
-  "What does tat tvam asi mean for daily life?",
-  "How should I think about karma at work?",
-  "Why did the rishis write in stories and symbols?",
-];
+// Real-world prompts, localized per language. Access as SUGGESTIONS[lang].
+const SUGGESTIONS = {
+  en: [
+    "I'm burning out at work and can't switch off.",
+    "At my age, I feel like a burden to my family.",
+    "I carry guilt over things I can't undo — how do I let go?",
+    "Am I failing my kids by working this much?",
+    "My children have their own lives and I feel alone.",
+    "I'm older now and full of regret. Is it too late to change?",
+    "I'm afraid of dying. What do the texts say about death?",
+    "How do I parent without trying to control everything?",
+    "In old age, how do I find purpose when my role is gone?",
+    "Is it wrong to put my family before honesty at work?",
+    "How do I decide when both right choices hurt someone?",
+    "I compare myself to everyone and never feel enough.",
+  ],
+  hi: [
+    "काम के बोझ से थक चुका हूँ, मन शांत ही नहीं होता।",
+    "इस उम्र में लगता है कि मैं परिवार पर बोझ हूँ।",
+    "जो हो चुका उसे बदल नहीं सकता — यह अपराधबोध कैसे छोड़ूँ?",
+    "इतना काम करके क्या मैं अपने बच्चों के साथ अन्याय कर रहा हूँ?",
+    "बच्चे अपनी दुनिया में व्यस्त हैं और मैं अकेला महसूस करता हूँ।",
+    "अब उम्र हो चली, बहुत पछतावा है। क्या बदलने में देर हो गई?",
+    "मुझे मृत्यु का भय है। ग्रंथ मृत्यु के बारे में क्या कहते हैं?",
+    "बच्चों पर नियंत्रण किए बिना उनका पालन कैसे करूँ?",
+    "बुढ़ापे में, जब भूमिका ही न रही, तो जीवन का अर्थ कैसे पाऊँ?",
+    "क्या सच्चाई से पहले परिवार को रखना ग़लत है?",
+    "जब दोनों सही रास्ते किसी को दुख दें, तो कैसे चुनूँ?",
+    "मैं हर किसी से अपनी तुलना करता हूँ और कभी संतुष्ट नहीं होता।",
+  ],
+  te: [
+    "పనితో అలసిపోయాను, మనసు నిమ్మళించడమే లేదు.",
+    "ఈ వయసులో నా కుటుంబానికి భారంగా అనిపిస్తోంది.",
+    "జరిగిపోయినది మార్చలేను — ఈ అపరాధభావాన్ని ఎలా వదిలించుకోవాలి?",
+    "ఇంత పని చేస్తూ నా పిల్లలకు అన్యాయం చేస్తున్నానా?",
+    "పిల్లలు వాళ్ల జీవితాల్లో మునిగిపోయారు, నేను ఒంటరిగా అనిపిస్తోంది.",
+    "వయసు మీద పడింది, చాలా పశ్చాత్తాపం. మారడానికి ఆలస్యమైందా?",
+    "నాకు మరణ భయం ఉంది. మరణం గురించి గ్రంథాలు ఏమి చెబుతాయి?",
+    "పిల్లలను అదుపు చేయకుండా ఎలా పెంచాలి?",
+    "వృద్ధాప్యంలో, పాత్రే లేనప్పుడు జీవితానికి అర్థం ఎలా వెతకాలి?",
+    "నిజాయితీ కంటే కుటుంబాన్ని ముందు ఉంచడం తప్పా?",
+    "రెండు సరైన దారులూ ఎవరినో బాధపెడితే ఎలా నిర్ణయించుకోవాలి?",
+    "అందరితో పోల్చుకుంటూ నేనెప్పుడూ సరిపోనని అనిపిస్తుంది.",
+  ],
+  zh: [
+    "工作让我精疲力尽，怎么也放松不下来。",
+    "到了这个年纪，我觉得自己成了家人的负担。",
+    "有些事无法挽回，我该如何放下愧疚？",
+    "这样拼命工作，是不是亏欠了孩子？",
+    "孩子们都有自己的生活，我感到很孤单。",
+    "我年纪大了，满是悔恨。现在改变还来得及吗？",
+    "我害怕死亡。典籍是如何看待死亡的？",
+    "如何不事事掌控地养育孩子？",
+    "年老了，角色不再，我该如何找到人生的意义？",
+    "把家庭放在诚实之前，是错的吗？",
+    "当两个正确的选择都会伤到人，我该如何抉择？",
+    "我总和别人比较，永远觉得自己不够好。",
+  ],
+};
 
 
 /* ------------------------------------------------------------------ */
@@ -969,6 +1029,8 @@ export default function SanatanaGuide() {
   const [authError, setAuthError] = useState(null);
   const [authNote, setAuthNote] = useState(null);
   const [limitReached, setLimitReached] = useState(false);
+  const [limitMsg, setLimitMsg] = useState(null);
+  const [showAuth, setShowAuth] = useState(false); // auth panel is opt-in now
   const [showAdmin, setShowAdmin] = useState(false);
   const [adminUsers, setAdminUsers] = useState([]);
   /* ---------------- three.js: the breathing bindu-mandala ---------- */
@@ -1269,6 +1331,7 @@ export default function SanatanaGuide() {
       const r = await apiRegister(name);
       setUser(r.user);
       setLimitReached(false);
+      setShowAuth(false);
       if (r.note) setAuthNote(r.note);
     } catch (e) {
       setAuthError(e.code === "conflict" || /taken/i.test(e.message) ? t("auth_err_taken") : t("auth_err_generic"));
@@ -1287,6 +1350,7 @@ export default function SanatanaGuide() {
       const r = await apiLogin(name);
       setUser(r.user);
       setLimitReached(false);
+      setShowAuth(false);
     } catch (e) {
       setAuthError(t("auth_err_generic"));
     } finally {
@@ -1335,10 +1399,10 @@ export default function SanatanaGuide() {
     const content = (preset != null ? preset : input).trim();
     if (!content || loading) return;
 
-    // Must be signed in to ask.
-    if (!user) {
+    // Guests can ask too (rate-limited on the server). Don't send if the
+    // daily limit was already hit and the user isn't allowlisted.
+    if (limitReached && user?.status !== "allowlisted") {
       openDock();
-      setAuthError(null);
       return;
     }
 
@@ -1362,13 +1426,15 @@ export default function SanatanaGuide() {
       });
 
       if (res.status === 401) {
-        // Session expired or missing — send back to the auth gate.
+        // Session expired — drop to guest state and let them keep asking.
         setUser(null);
         setLoading(false);
         return;
       }
       if (res.status === 403) {
-        // Free-question limit hit; show the request-access state.
+        // Daily limit hit; show the request-access state with the server note.
+        const info = await res.json().catch(() => ({}));
+        setLimitMsg(info.message || null);
         setLimitReached(true);
         setLoading(false);
         return;
@@ -1426,7 +1492,8 @@ export default function SanatanaGuide() {
     );
   };
 
-  const canAsk = user && (user.status === "allowlisted" || !limitReached);
+  const allowlisted = user?.status === "allowlisted";
+  const atLimit = limitReached && !allowlisted;
 
   /* ---------------- render ----------------------------------------- */
   return (
@@ -1807,8 +1874,16 @@ export default function SanatanaGuide() {
 
         /* ---------- auth gate ---------- */
         .auth {
-          padding: 26px 20px 22px; text-align: center;
+          position: relative;
+          padding: 22px 20px; text-align: center;
+          border-bottom: 1px solid var(--line); background: rgba(11,10,20,0.35);
         }
+        .auth-close {
+          position: absolute; top: 8px; right: 10px;
+          background: transparent; border: none; color: var(--ash);
+          font-size: 22px; line-height: 1; cursor: pointer; padding: 2px 6px;
+        }
+        .auth-close:hover { color: var(--ember); }
         .auth .om-big { font-family: var(--deva); font-size: 40px; color: var(--ember); display: block; margin-bottom: 12px; }
         .auth h3 { font-family: var(--display); font-weight: 400; font-size: 22px; margin-bottom: 10px; }
         .auth p { color: var(--ash); font-size: 15.5px; max-width: 34ch; margin: 0 auto 18px; line-height: 1.5; }
@@ -1837,6 +1912,8 @@ export default function SanatanaGuide() {
         }
         .dock-id .who { flex: 1; }
         .dock-id .who b { color: var(--manuscript); font-weight: 500; }
+        .dock-id .who.guest { font-style: italic; color: var(--ash); }
+        .limit-box .btn { margin-top: 16px; }
         .dock-id .tag-admin {
           font-family: var(--mono); font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase;
           color: var(--ember); border: 1px solid var(--ember); border-radius: 999px; padding: 2px 7px;
@@ -2000,7 +2077,7 @@ export default function SanatanaGuide() {
               {t("launcher_open")}
             </button>
             <div className="chips">
-              {SUGGESTIONS.map((s) => (
+              {(SUGGESTIONS[lang] || SUGGESTIONS.en).map((s) => (
                 <button
                   key={s}
                   className="chip"
@@ -2117,26 +2194,45 @@ export default function SanatanaGuide() {
           <LangSelect lang={lang} setLang={setLang} label={t("lang_label")} />
         </div>
 
-        {/* signed-in identity / admin entry */}
-        {user && (
-          <div className="dock-id">
-            <span className="who">
-              <b>{user.username}</b>
-              {user.role === "admin" && <span className="tag-admin"> admin</span>}
-            </span>
-            {user.role === "admin" && (
-              <button onClick={openAdmin}>{t("admin_title")}</button>
-            )}
-            <button onClick={doLogout}>{t("auth_signout")}</button>
-          </div>
-        )}
+        {/* identity / sign-in row — sign-in is now optional, not a gate */}
+        <div className="dock-id">
+          {user ? (
+            <React.Fragment>
+              <span className="who">
+                <b>{user.username}</b>
+                {user.role === "admin" && <span className="tag-admin"> admin</span>}
+              </span>
+              {user.role === "admin" && (
+                <button onClick={openAdmin}>{t("admin_title")}</button>
+              )}
+              <button onClick={doLogout}>{t("auth_signout")}</button>
+            </React.Fragment>
+          ) : (
+            <React.Fragment>
+              <span className="who guest">{t("guest_label")}</span>
+              <button
+                onClick={() => {
+                  setShowAuth((v) => !v);
+                  setAuthError(null);
+                }}
+                aria-expanded={showAuth}
+              >
+                {t("auth_signin_optional")}
+              </button>
+            </React.Fragment>
+          )}
+        </div>
 
-        {/* body: auth gate, or limit state, or the chat */}
-        {!user ? (
+        {/* on-demand auth panel (register / login) */}
+        {!user && showAuth && (
           <div className="auth">
-            <span className="om-big" aria-hidden="true">
-              ॐ
-            </span>
+            <button
+              className="auth-close"
+              onClick={() => setShowAuth(false)}
+              aria-label="Close"
+            >
+              ×
+            </button>
             <h3>
               {authMode === "register" ? t("auth_gate_title") : t("auth_signin_title")}
             </h3>
@@ -2183,50 +2279,65 @@ export default function SanatanaGuide() {
               )}
             </div>
           </div>
-        ) : limitReached && user.status !== "allowlisted" ? (
+        )}
+
+        {/* chat log — always visible */}
+        <div className="dock-log" aria-live="polite">
+          {!allowlisted && messages.length === 0 && !loading && (
+            <div className="chat-empty" style={{ paddingBottom: 14 }}>
+              {t("auth_pending_note")}
+            </div>
+          )}
+          {messages.length === 0 && !loading && (
+            <div className="chat-empty">
+              <span className="om-big">ॐ</span>
+              {t("dock_empty_1")}
+              <br />
+              {t("dock_empty_2")}
+            </div>
+          )}
+          {messages.map((m, i) => (
+            <div key={i} className={`msg ${m.role === "user" ? "user" : "guide"}`}>
+              <div className="msg-bubble">
+                <span className="msg-label">
+                  {m.role === "user" ? t("label_you") : "Sanātana"}
+                </span>
+                {m.role === "user" ? m.content : renderGuideMessage(m.content)}
+              </div>
+            </div>
+          ))}
+          {loading && (
+            <div className="chat-wait">
+              <span className="pulse" /> {t("dock_consulting")}
+            </div>
+          )}
+          <div ref={chatEndRef} />
+        </div>
+
+        {error && <div className="chat-error">{error}</div>}
+
+        {/* limit state replaces the composer; otherwise the composer */}
+        {atLimit ? (
           <div className="limit-box">
             <h3>{t("auth_limit_title")}</h3>
-            <p>{t("auth_limit_p")}</p>
+            <p>{limitMsg || t("auth_limit_p")}</p>
+            {!user && (
+              <button
+                className="btn"
+                onClick={() => {
+                  setAuthMode("register");
+                  setShowAuth(true);
+                }}
+              >
+                {t("auth_register")}
+              </button>
+            )}
           </div>
         ) : (
           <React.Fragment>
-            <div className="dock-log" aria-live="polite">
-              {user.status !== "allowlisted" && messages.length === 0 && !loading && (
-                <div className="chat-empty" style={{ paddingBottom: 14 }}>
-                  {t("auth_pending_note")}
-                </div>
-              )}
-              {messages.length === 0 && !loading && (
-                <div className="chat-empty">
-                  <span className="om-big">ॐ</span>
-                  {t("dock_empty_1")}
-                  <br />
-                  {t("dock_empty_2")}
-                </div>
-              )}
-              {messages.map((m, i) => (
-                <div key={i} className={`msg ${m.role === "user" ? "user" : "guide"}`}>
-                  <div className="msg-bubble">
-                    <span className="msg-label">
-                      {m.role === "user" ? t("label_you") : "Sanātana"}
-                    </span>
-                    {m.role === "user" ? m.content : renderGuideMessage(m.content)}
-                  </div>
-                </div>
-              ))}
-              {loading && (
-                <div className="chat-wait">
-                  <span className="pulse" /> {t("dock_consulting")}
-                </div>
-              )}
-              <div ref={chatEndRef} />
-            </div>
-
-            {error && <div className="chat-error">{error}</div>}
-
             {messages.length === 0 && !loading && (
               <div className="dock-chips">
-                {SUGGESTIONS.slice(0, 3).map((s) => (
+                {(SUGGESTIONS[lang] || SUGGESTIONS.en).slice(0, 3).map((s) => (
                   <button key={s} className="chip" onClick={() => send(s)}>
                     {s}
                   </button>
