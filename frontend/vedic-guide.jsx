@@ -805,63 +805,64 @@ LIBRARY.upavedas = [
       "Distinct revelation streams, sometimes in tension with Vedic orthodoxy. Read them as the architecture of devotional practice; their ritual detail is bound to sect and setting, their contemplative core is broadly shared.",
   },
 ];
-// Real-world prompts, localized per language. Access as SUGGESTIONS[lang].
+// Real-world prompts as a text cloud: a short `tag` is shown on the chip, the
+// full question `q` is sent on click. Localized per language — SUGGESTIONS[lang].
 const SUGGESTIONS = {
   en: [
-    "I'm burning out at work and can't switch off.",
-    "At my age, I feel like a burden to my family.",
-    "I carry guilt over things I can't undo — how do I let go?",
-    "Am I failing my kids by working this much?",
-    "My children have their own lives and I feel alone.",
-    "I'm older now and full of regret. Is it too late to change?",
-    "I'm afraid of dying. What do the texts say about death?",
-    "How do I parent without trying to control everything?",
-    "In old age, how do I find purpose when my role is gone?",
-    "Is it wrong to put my family before honesty at work?",
-    "How do I decide when both right choices hurt someone?",
-    "I compare myself to everyone and never feel enough.",
+    { tag: "Burning out", q: "I'm burning out at work and can't switch off." },
+    { tag: "A burden with age", q: "At my age, I feel like a burden to my family." },
+    { tag: "Letting go of guilt", q: "I carry guilt over things I can't undo — how do I let go?" },
+    { tag: "Failing my kids?", q: "Am I failing my kids by working this much?" },
+    { tag: "Empty nest", q: "My children have their own lives and I feel alone." },
+    { tag: "Regret — too late?", q: "I'm older now and full of regret. Is it too late to change?" },
+    { tag: "Fear of death", q: "I'm afraid of dying. What do the texts say about death?" },
+    { tag: "Parenting & control", q: "How do I parent without trying to control everything?" },
+    { tag: "Purpose in old age", q: "In old age, how do I find purpose when my role is gone?" },
+    { tag: "Family vs. honesty", q: "Is it wrong to put my family before honesty at work?" },
+    { tag: "Both choices hurt", q: "How do I decide when both right choices hurt someone?" },
+    { tag: "Never enough", q: "I compare myself to everyone and never feel enough." },
   ],
   hi: [
-    "काम के बोझ से थक चुका हूँ, मन शांत ही नहीं होता।",
-    "इस उम्र में लगता है कि मैं परिवार पर बोझ हूँ।",
-    "जो हो चुका उसे बदल नहीं सकता — यह अपराधबोध कैसे छोड़ूँ?",
-    "इतना काम करके क्या मैं अपने बच्चों के साथ अन्याय कर रहा हूँ?",
-    "बच्चे अपनी दुनिया में व्यस्त हैं और मैं अकेला महसूस करता हूँ।",
-    "अब उम्र हो चली, बहुत पछतावा है। क्या बदलने में देर हो गई?",
-    "मुझे मृत्यु का भय है। ग्रंथ मृत्यु के बारे में क्या कहते हैं?",
-    "बच्चों पर नियंत्रण किए बिना उनका पालन कैसे करूँ?",
-    "बुढ़ापे में, जब भूमिका ही न रही, तो जीवन का अर्थ कैसे पाऊँ?",
-    "क्या सच्चाई से पहले परिवार को रखना ग़लत है?",
-    "जब दोनों सही रास्ते किसी को दुख दें, तो कैसे चुनूँ?",
-    "मैं हर किसी से अपनी तुलना करता हूँ और कभी संतुष्ट नहीं होता।",
+    { tag: "काम की थकान", q: "काम के बोझ से थक चुका हूँ, मन शांत ही नहीं होता।" },
+    { tag: "उम्र और बोझ", q: "इस उम्र में लगता है कि मैं परिवार पर बोझ हूँ।" },
+    { tag: "अपराधबोध छोड़ना", q: "जो हो चुका उसे बदल नहीं सकता — यह अपराधबोध कैसे छोड़ूँ?" },
+    { tag: "बच्चों के साथ अन्याय?", q: "इतना काम करके क्या मैं अपने बच्चों के साथ अन्याय कर रहा हूँ?" },
+    { tag: "सूना घर", q: "बच्चे अपनी दुनिया में व्यस्त हैं और मैं अकेला महसूस करता हूँ।" },
+    { tag: "पछतावा — देर तो नहीं?", q: "अब उम्र हो चली, बहुत पछतावा है। क्या बदलने में देर हो गई?" },
+    { tag: "मृत्यु का भय", q: "मुझे मृत्यु का भय है। ग्रंथ मृत्यु के बारे में क्या कहते हैं?" },
+    { tag: "पालन बनाम नियंत्रण", q: "बच्चों पर नियंत्रण किए बिना उनका पालन कैसे करूँ?" },
+    { tag: "बुढ़ापे में अर्थ", q: "बुढ़ापे में, जब भूमिका ही न रही, तो जीवन का अर्थ कैसे पाऊँ?" },
+    { tag: "परिवार बनाम सच्चाई", q: "क्या सच्चाई से पहले परिवार को रखना ग़लत है?" },
+    { tag: "दोनों राहें दुखद", q: "जब दोनों सही रास्ते किसी को दुख दें, तो कैसे चुनूँ?" },
+    { tag: "कभी संतोष नहीं", q: "मैं हर किसी से अपनी तुलना करता हूँ और कभी संतुष्ट नहीं होता।" },
   ],
   te: [
-    "పనితో అలసిపోయాను, మనసు నిమ్మళించడమే లేదు.",
-    "ఈ వయసులో నా కుటుంబానికి భారంగా అనిపిస్తోంది.",
-    "జరిగిపోయినది మార్చలేను — ఈ అపరాధభావాన్ని ఎలా వదిలించుకోవాలి?",
-    "ఇంత పని చేస్తూ నా పిల్లలకు అన్యాయం చేస్తున్నానా?",
-    "పిల్లలు వాళ్ల జీవితాల్లో మునిగిపోయారు, నేను ఒంటరిగా అనిపిస్తోంది.",
-    "వయసు మీద పడింది, చాలా పశ్చాత్తాపం. మారడానికి ఆలస్యమైందా?",
-    "నాకు మరణ భయం ఉంది. మరణం గురించి గ్రంథాలు ఏమి చెబుతాయి?",
-    "పిల్లలను అదుపు చేయకుండా ఎలా పెంచాలి?",
-    "వృద్ధాప్యంలో, పాత్రే లేనప్పుడు జీవితానికి అర్థం ఎలా వెతకాలి?",
-    "నిజాయితీ కంటే కుటుంబాన్ని ముందు ఉంచడం తప్పా?",
-    "రెండు సరైన దారులూ ఎవరినో బాధపెడితే ఎలా నిర్ణయించుకోవాలి?",
-    "అందరితో పోల్చుకుంటూ నేనెప్పుడూ సరిపోనని అనిపిస్తుంది.",
+    { tag: "పని అలసట", q: "పనితో అలసిపోయాను, మనసు నిమ్మళించడమే లేదు." },
+    { tag: "వయసు, భారం", q: "ఈ వయసులో నా కుటుంబానికి భారంగా అనిపిస్తోంది." },
+    { tag: "అపరాధభావం వదలడం", q: "జరిగిపోయినది మార్చలేను — ఈ అపరాధభావాన్ని ఎలా వదిలించుకోవాలి?" },
+    { tag: "పిల్లలకు అన్యాయమా?", q: "ఇంత పని చేస్తూ నా పిల్లలకు అన్యాయం చేస్తున్నానా?" },
+    { tag: "ఒంటరి ఇల్లు", q: "పిల్లలు వాళ్ల జీవితాల్లో మునిగిపోయారు, నేను ఒంటరిగా అనిపిస్తోంది." },
+    { tag: "పశ్చాత్తాపం — ఆలస్యమా?", q: "వయసు మీద పడింది, చాలా పశ్చాత్తాపం. మారడానికి ఆలస్యమైందా?" },
+    { tag: "మరణ భయం", q: "నాకు మరణ భయం ఉంది. మరణం గురించి గ్రంథాలు ఏమి చెబుతాయి?" },
+    { tag: "పెంపకం, నియంత్రణ", q: "పిల్లలను అదుపు చేయకుండా ఎలా పెంచాలి?" },
+    { tag: "వృద్ధాప్యంలో అర్థం", q: "వృద్ధాప్యంలో, పాత్రే లేనప్పుడు జీవితానికి అర్థం ఎలా వెతకాలి?" },
+    { tag: "కుటుంబమా, నిజాయితీనా", q: "నిజాయితీ కంటే కుటుంబాన్ని ముందు ఉంచడం తప్పా?" },
+    { tag: "రెండూ బాధిస్తే", q: "రెండు సరైన దారులూ ఎవరినో బాధపెడితే ఎలా నిర్ణయించుకోవాలి?" },
+    { tag: "ఎప్పుడూ చాలదు", q: "అందరితో పోల్చుకుంటూ నేనెప్పుడూ సరిపోనని అనిపిస్తుంది." },
   ],
   zh: [
-    "工作让我精疲力尽，怎么也放松不下来。",
-    "到了这个年纪，我觉得自己成了家人的负担。",
-    "有些事无法挽回，我该如何放下愧疚？",
-    "这样拼命工作，是不是亏欠了孩子？",
-    "孩子们都有自己的生活，我感到很孤单。",
-    "我年纪大了，满是悔恨。现在改变还来得及吗？",
-    "我害怕死亡。典籍是如何看待死亡的？",
-    "如何不事事掌控地养育孩子？",
-    "年老了，角色不再，我该如何找到人生的意义？",
-    "把家庭放在诚实之前，是错的吗？",
-    "当两个正确的选择都会伤到人，我该如何抉择？",
-    "我总和别人比较，永远觉得自己不够好。",
+    { tag: "职场倦怠", q: "工作让我精疲力尽，怎么也放松不下来。" },
+    { tag: "年老之累", q: "到了这个年纪，我觉得自己成了家人的负担。" },
+    { tag: "放下愧疚", q: "有些事无法挽回，我该如何放下愧疚？" },
+    { tag: "亏欠孩子？", q: "这样拼命工作，是不是亏欠了孩子？" },
+    { tag: "空巢孤独", q: "孩子们都有自己的生活，我感到很孤单。" },
+    { tag: "悔恨 — 太迟？", q: "我年纪大了，满是悔恨。现在改变还来得及吗？" },
+    { tag: "对死亡的恐惧", q: "我害怕死亡。典籍是如何看待死亡的？" },
+    { tag: "养育与掌控", q: "如何不事事掌控地养育孩子？" },
+    { tag: "暮年的意义", q: "年老了，角色不再，我该如何找到人生的意义？" },
+    { tag: "家庭与诚实", q: "把家庭放在诚实之前，是错的吗？" },
+    { tag: "两难抉择", q: "当两个正确的选择都会伤到人，我该如何抉择？" },
+    { tag: "永不满足", q: "我总和别人比较，永远觉得自己不够好。" },
   ],
 };
 
@@ -1714,13 +1715,33 @@ export default function SanatanaGuide() {
           display: block; margin-bottom: 14px;
         }
         .launcher p { color: var(--ash); max-width: 48ch; margin: 0 auto 24px; }
-        .chips { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 26px; justify-content: center; }
         .chip {
           font-family: var(--mono); font-size: 12.5px; letter-spacing: 0.02em;
           color: var(--ash); background: transparent; border: 1px solid rgba(154,149,175,0.35);
           border-radius: 100px; padding: 9px 16px; transition: all 0.15s ease;
         }
         .chip:hover { border-color: var(--ember); color: var(--ember); }
+
+        /* launcher suggestions as a compact text cloud */
+        .chip-cloud {
+          display: flex; flex-wrap: wrap; justify-content: center; align-items: center;
+          gap: 9px 11px; margin: 30px auto 0; max-width: 540px;
+        }
+        .cloud-chip {
+          font-family: var(--body); color: var(--ash); line-height: 1.15;
+          background: rgba(232,163,61,0.045); border: 1px solid rgba(154,149,175,0.2);
+          border-radius: 100px; padding: 5px 14px; transition: all 0.16s ease;
+        }
+        .cloud-chip:hover {
+          color: var(--ember); border-color: var(--ember);
+          background: var(--ember-soft); transform: translateY(-1px);
+        }
+        .cloud-chip:disabled { opacity: 0.5; cursor: default; }
+        /* gentle size variation gives the cloud its texture */
+        .cloud-chip.s0 { font-size: 15px; }
+        .cloud-chip.s1 { font-size: 18px; color: var(--manuscript); }
+        .cloud-chip.s2 { font-size: 13.5px; opacity: 0.92; }
+        .cloud-chip.s3 { font-size: 16px; }
 
         /* ---------- shared chat pieces ---------- */
         .chat-empty { text-align: center; color: var(--ash); padding: 26px 10px 30px; font-size: 17px; }
@@ -2133,15 +2154,16 @@ export default function SanatanaGuide() {
             <button className="btn" onClick={openDock}>
               {t("launcher_open")}
             </button>
-            <div className="chips">
-              {(SUGGESTIONS[lang] || SUGGESTIONS.en).map((s) => (
+            <div className="chip-cloud">
+              {(SUGGESTIONS[lang] || SUGGESTIONS.en).map((s, i) => (
                 <button
-                  key={s}
-                  className="chip"
-                  onClick={() => askFromPage(s)}
+                  key={s.q}
+                  className={`cloud-chip s${i % 4}`}
+                  onClick={() => askFromPage(s.q)}
                   disabled={loading}
+                  title={s.q}
                 >
-                  {s}
+                  {s.tag}
                 </button>
               ))}
             </div>
@@ -2414,9 +2436,9 @@ export default function SanatanaGuide() {
           <React.Fragment>
             {messages.length === 0 && !loading && (
               <div className="dock-chips">
-                {(SUGGESTIONS[lang] || SUGGESTIONS.en).slice(0, 3).map((s) => (
-                  <button key={s} className="chip" onClick={() => send(s)}>
-                    {s}
+                {(SUGGESTIONS[lang] || SUGGESTIONS.en).slice(0, 4).map((s) => (
+                  <button key={s.q} className="chip" onClick={() => send(s.q)} title={s.q}>
+                    {s.tag}
                   </button>
                 ))}
               </div>
