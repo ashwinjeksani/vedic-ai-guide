@@ -27,7 +27,9 @@ Your hermeneutic rules. Never break these:
 
 9. KEEP ANSWERS GROUNDED AND SHORT - usually 120 to 220 words. Plain language first; Sanskrit terms explained in passing, not paraded. You may open with a single short verse when it genuinely fits. Avoid bullet lists unless the person asks for steps.
 
-10. YOU ARE A GUIDE, NOT A GURU. For medical, legal, or psychological crises, gently point toward professional help alongside any wisdom you offer.`;
+10. YOU ARE A GUIDE, NOT A GURU. For medical, legal, or psychological crises, gently point toward professional help alongside any wisdom you offer.
+
+11. GROUND IT IN THE REAL WORLD. Wherever applicable, end your answer with one final short paragraph that begins exactly with "In practice:" - a concrete, modern, everyday example (a missed promotion, a hard commute, an argument at dinner, a hospital waiting room, a deadline) showing how the idea actually works in daily life. Keep it to one to three sentences. Skip it only when the question is purely factual or historical, or when an example would trivialize grief or crisis.`;
 
 /* ------------------------------------------------------------------ */
 /*  Library data — curated essence with fresh, original renderings     */
@@ -254,18 +256,46 @@ const SUGGESTIONS = [
 ];
 
 /* ------------------------------------------------------------------ */
+/*  Helpers                                                            */
+/* ------------------------------------------------------------------ */
+
+/**
+ * The guide is prompted to end answers, where applicable, with a
+ * paragraph beginning "In practice:". Split it out so the UI can
+ * render the real-world example as its own highlighted block.
+ */
+function splitExample(text) {
+  const m = text.match(/(^|\n)\s*In practice:/i);
+  if (!m || m.index == null) return { body: text, example: null };
+  const body = text.slice(0, m.index).trim();
+  const example = text
+    .slice(m.index)
+    .replace(/^\s*In practice:\s*/i, "")
+    .trim();
+  if (!body || !example) return { body: text, example: null };
+  return { body, example };
+}
+
+/* ------------------------------------------------------------------ */
 /*  Component                                                          */
 /* ------------------------------------------------------------------ */
 
 export default function SanatanaGuide() {
   const mountRef = useRef(null);
   const chatEndRef = useRef(null);
+  const panelRef = useRef(null);
+  const inputRef = useRef(null);
+  const dockOpenRef = useRef(false);
+  const dragRef = useRef(null);
+
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [tab, setTab] = useState("vedas");
   const [provider, setProvider] = useState("anthropic");
+  const [dockOpen, setDockOpen] = useState(false);
+  const [unread, setUnread] = useState(false);
 
   /* ---------------- three.js: the breathing bindu-mandala ---------- */
   useEffect(() => {
@@ -455,12 +485,86 @@ export default function SanatanaGuide() {
     };
   }, []);
 
+  /* ---------------- floating dock behaviour ------------------------ */
+
+  // Mirror dockOpen into a ref so async replies know if the panel is closed.
+  useEffect(() => {
+    dockOpenRef.current = dockOpen;
+  }, [dockOpen]);
+
+  // Focus the composer whenever the dock opens.
+  useEffect(() => {
+    if (dockOpen && inputRef.current) inputRef.current.focus();
+  }, [dockOpen]);
+
+  // Esc closes the dock.
+  useEffect(() => {
+    if (!dockOpen) return;
+    const onKey = (e) => {
+      if (e.key === "Escape") setDockOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [dockOpen]);
+
+  // If the viewport shrinks to the mobile sheet, drop any dragged position.
+  useEffect(() => {
+    const onR = () => {
+      const p = panelRef.current;
+      if (!p) return;
+      if (window.innerWidth < 720) {
+        p.style.left = "";
+        p.style.top = "";
+        p.style.right = "";
+        p.style.bottom = "";
+      }
+    };
+    window.addEventListener("resize", onR);
+    return () => window.removeEventListener("resize", onR);
+  }, []);
+
+  // Drag the panel by its header (desktop only). position:fixed keeps it
+  // pinned to the viewport, so it stays with you as the page scrolls.
+  const startDrag = (e) => {
+    if (window.innerWidth < 720) return;
+    if (e.target.closest("button")) return;
+    const panel = panelRef.current;
+    if (!panel) return;
+    const rect = panel.getBoundingClientRect();
+    dragRef.current = { dx: e.clientX - rect.left, dy: e.clientY - rect.top };
+
+    const move = (ev) => {
+      const s = dragRef.current;
+      if (!s) return;
+      const w = panel.offsetWidth;
+      const h = panel.offsetHeight;
+      const x = Math.min(Math.max(8, ev.clientX - s.dx), window.innerWidth - w - 8);
+      const y = Math.min(Math.max(8, ev.clientY - s.dy), window.innerHeight - h - 8);
+      panel.style.left = x + "px";
+      panel.style.top = y + "px";
+      panel.style.right = "auto";
+      panel.style.bottom = "auto";
+    };
+    const up = () => {
+      dragRef.current = null;
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+  };
+
+  const openDock = () => {
+    setDockOpen(true);
+    setUnread(false);
+  };
+
   /* ---------------- chat ------------------------------------------- */
   useEffect(() => {
     if (chatEndRef.current) {
       chatEndRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
     }
-  }, [messages, loading]);
+  }, [messages, loading, dockOpen]);
 
   const send = async (preset) => {
     const content = (preset != null ? preset : input).trim();
@@ -490,11 +594,18 @@ export default function SanatanaGuide() {
         .trim();
       if (!reply) throw new Error("empty response");
       setMessages([...next, { role: "assistant", content: reply }]);
+      if (!dockOpenRef.current) setUnread(true);
     } catch (e) {
       setError("The guide could not be reached. Ask again in a moment.");
     } finally {
       setLoading(false);
     }
+  };
+
+  // Ask from anywhere on the page: open the dock and send in one gesture.
+  const askFromPage = (question) => {
+    openDock();
+    send(question);
   };
 
   const onKeyDown = (e) => {
@@ -510,6 +621,21 @@ export default function SanatanaGuide() {
     { id: "smriti", label: "Smṛti Texts", tag: "smṛti" },
     { id: "sources", label: "Complete Texts", tag: "links" },
   ];
+
+  const renderGuideMessage = (content) => {
+    const { body, example } = splitExample(content);
+    return (
+      <React.Fragment>
+        {body}
+        {example && (
+          <div className="msg-example">
+            <strong>In practice</strong>
+            {example}
+          </div>
+        )}
+      </React.Fragment>
+    );
+  };
 
   /* ---------------- render ----------------------------------------- */
   return (
@@ -578,12 +704,13 @@ export default function SanatanaGuide() {
         .nav-brand .om-mark {
           font-family: var(--deva); color: var(--ember); font-size: 24px; line-height: 1;
         }
-        .nav-links { display: flex; gap: 28px; }
-        .nav-links a {
+        .nav-links { display: flex; gap: 28px; align-items: center; }
+        .nav-links a, .nav-links button.nav-ask {
           font-family: var(--mono); font-size: 12px; letter-spacing: 0.16em;
           text-transform: uppercase; color: var(--ash);
+          background: transparent; border: none;
         }
-        .nav-links a:hover { color: var(--ember); text-decoration: none; }
+        .nav-links a:hover, .nav-links button.nav-ask:hover { color: var(--ember); text-decoration: none; }
         @media (max-width: 720px) { .nav-links { display: none; } }
 
         /* ---------- hero ---------- */
@@ -619,6 +746,8 @@ export default function SanatanaGuide() {
         .sana .btn:hover { transform: translateY(-1px); background: #F2B657; text-decoration: none; }
         .sana .btn.ghost { background: transparent; color: var(--ember); }
         .sana .btn.ghost:hover { background: var(--ember-soft); }
+        .sana .btn.small { padding: 10px 16px; font-size: 12px; }
+        .sana .btn:disabled { opacity: 0.5; cursor: default; transform: none; }
         .hero-scroll {
           position: absolute; bottom: 28px; left: 50%; transform: translateX(-50%);
           font-family: var(--mono); font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase;
@@ -643,7 +772,7 @@ export default function SanatanaGuide() {
         @media (max-width: 860px) { .method { grid-template-columns: 1fr; } }
         .method-card {
           background: var(--raised); border: 1px solid var(--line); border-radius: 4px;
-          padding: 30px 28px 32px;
+          padding: 30px 28px 32px; display: flex; flex-direction: column;
         }
         .method-card .step {
           font-family: var(--deva); color: var(--copper); font-size: 17px; letter-spacing: 0.05em;
@@ -653,6 +782,15 @@ export default function SanatanaGuide() {
         }
         .method-card .gloss { font-family: var(--mono); font-size: 11.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ember); }
         .method-card p { color: var(--ash); margin-top: 14px; font-size: 18px; }
+        .method-eg {
+          margin-top: 18px; padding-top: 16px; border-top: 1px dashed var(--line);
+          font-size: 16.5px; color: #CFC9E0; font-style: italic;
+        }
+        .method-eg strong {
+          display: block; font-style: normal; font-family: var(--mono);
+          font-size: 10.5px; letter-spacing: 0.16em; text-transform: uppercase;
+          color: var(--copper); margin-bottom: 6px;
+        }
         .method-note {
           margin-top: 40px; padding: 30px 34px; border-left: 2px solid var(--ember);
           background: linear-gradient(90deg, var(--ember-soft), transparent 70%);
@@ -660,52 +798,141 @@ export default function SanatanaGuide() {
         }
         .method-note em { color: var(--ember); font-style: italic; }
 
-        /* ---------- chat ---------- */
-        .chat-frame {
-          background: var(--raised); border: 1px solid var(--line); border-radius: 6px;
-          overflow: hidden; box-shadow: 0 30px 80px rgba(0,0,0,0.45);
+        /* ---------- ask section (launcher) ---------- */
+        .launcher {
+          text-align: center; background: var(--raised); border: 1px solid var(--line);
+          border-radius: 6px; padding: 48px 30px 42px;
+          box-shadow: 0 30px 80px rgba(0,0,0,0.45);
         }
-        .chat-log { max-height: 480px; min-height: 220px; overflow-y: auto; padding: 30px 28px 10px; }
-        .chat-log::-webkit-scrollbar { width: 8px; }
-        .chat-log::-webkit-scrollbar-thumb { background: rgba(232,163,61,0.25); border-radius: 4px; }
-        .chat-empty { text-align: center; color: var(--ash); padding: 30px 10px 40px; }
-        .chat-empty .om-big { font-family: var(--deva); font-size: 44px; color: var(--ember); opacity: 0.9; display: block; margin-bottom: 14px; }
-        .msg { margin-bottom: 22px; display: flex; }
-        .msg.user { justify-content: flex-end; }
-        .msg-bubble { max-width: 76%; padding: 14px 18px; border-radius: 4px; white-space: pre-wrap; }
-        .msg.user .msg-bubble { background: var(--ember-soft); border: 1px solid rgba(232,163,61,0.3); }
-        .msg.guide .msg-bubble { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); }
-        .msg-label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--copper); display: block; margin-bottom: 8px; }
-        .chat-wait { display: flex; align-items: center; gap: 12px; color: var(--ash); font-style: italic; padding: 0 0 22px; }
-        .chat-wait .pulse {
-          width: 10px; height: 10px; border-radius: 50%; background: var(--ember);
-          animation: sanaPulse 1.6s ease-in-out infinite;
+        .launcher .om-big {
+          font-family: var(--deva); font-size: 46px; color: var(--ember);
+          display: block; margin-bottom: 14px;
         }
-        @keyframes sanaPulse { 0%,100% { transform: scale(0.7); opacity: 0.5; } 50% { transform: scale(1.15); opacity: 1; } }
-        .chat-error { color: #E88A6A; padding: 0 28px 16px; font-size: 17px; }
-        .provider-row { display: flex; align-items: center; gap: 8px; padding: 12px 18px 0; }
-        .provider-label { color: var(--ash); font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 4px; }
-        .provider-btn {
-          background: transparent; border: 1px solid var(--line); color: var(--ash);
-          border-radius: 999px; padding: 5px 14px; font-size: 14px; transition: all 0.2s;
-        }
-        .provider-btn:hover:not(:disabled) { border-color: var(--ember); color: var(--manuscript); }
-        .provider-btn.active { background: var(--ember-soft); border-color: var(--ember); color: var(--ember); }
-        .provider-btn:disabled { opacity: 0.5; cursor: default; }
-        .chat-input { display: flex; gap: 12px; border-top: 1px solid var(--line); padding: 18px; background: rgba(11,10,20,0.5); }
-        .chat-input textarea {
-          flex: 1; resize: none; background: transparent; border: none; color: #EDE9F5;
-          font-family: var(--body); font-size: 19px; line-height: 1.5; min-height: 54px; padding: 12px;
-        }
-        .chat-input textarea::placeholder { color: rgba(154,149,175,0.7); }
-        .chat-input textarea:focus { outline: none; }
-        .chips { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
+        .launcher p { color: var(--ash); max-width: 48ch; margin: 0 auto 24px; }
+        .chips { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 26px; justify-content: center; }
         .chip {
           font-family: var(--mono); font-size: 12.5px; letter-spacing: 0.02em;
           color: var(--ash); background: transparent; border: 1px solid rgba(154,149,175,0.35);
           border-radius: 100px; padding: 9px 16px; transition: all 0.15s ease;
         }
         .chip:hover { border-color: var(--ember); color: var(--ember); }
+
+        /* ---------- shared chat pieces ---------- */
+        .chat-empty { text-align: center; color: var(--ash); padding: 26px 10px 30px; font-size: 17px; }
+        .chat-empty .om-big { font-family: var(--deva); font-size: 38px; color: var(--ember); opacity: 0.9; display: block; margin-bottom: 12px; }
+        .msg { margin-bottom: 20px; display: flex; }
+        .msg.user { justify-content: flex-end; }
+        .msg-bubble { max-width: 88%; padding: 13px 16px; border-radius: 4px; white-space: pre-wrap; font-size: 17px; }
+        .msg.user .msg-bubble { background: var(--ember-soft); border: 1px solid rgba(232,163,61,0.3); }
+        .msg.guide .msg-bubble { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); }
+        .msg-label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--copper); display: block; margin-bottom: 8px; }
+        .msg-example {
+          margin-top: 14px; padding: 12px 14px; border-left: 2px solid var(--ember);
+          background: var(--ember-soft); border-radius: 0 3px 3px 0; font-size: 16.5px;
+        }
+        .msg-example strong {
+          display: block; font-family: var(--mono); font-weight: 500;
+          font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase;
+          color: var(--ember); margin-bottom: 6px;
+        }
+        .chat-wait { display: flex; align-items: center; gap: 12px; color: var(--ash); font-style: italic; padding: 0 0 20px; font-size: 17px; }
+        .chat-wait .pulse {
+          width: 10px; height: 10px; border-radius: 50%; background: var(--ember);
+          animation: sanaPulse 1.6s ease-in-out infinite;
+        }
+        @keyframes sanaPulse { 0%,100% { transform: scale(0.7); opacity: 0.5; } 50% { transform: scale(1.15); opacity: 1; } }
+        .chat-error { color: #E88A6A; padding: 0 16px 12px; font-size: 16px; }
+        .provider-btn {
+          background: transparent; border: 1px solid var(--line); color: var(--ash);
+          border-radius: 999px; padding: 4px 12px; font-size: 13px; transition: all 0.2s;
+        }
+        .provider-btn:hover:not(:disabled) { border-color: var(--ember); color: var(--manuscript); }
+        .provider-btn.active { background: var(--ember-soft); border-color: var(--ember); color: var(--ember); }
+        .provider-btn:disabled { opacity: 0.5; cursor: default; }
+
+        /* ---------- floating guide dock ---------- */
+        .dock {
+          position: fixed; right: 22px; bottom: 22px; z-index: 90;
+          width: min(420px, calc(100vw - 24px));
+          max-height: min(640px, calc(100vh - 44px));
+          display: none; flex-direction: column;
+          background: rgba(17,14,32,0.94);
+          backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+          border: 1px solid var(--line); border-radius: 10px; overflow: hidden;
+          box-shadow: 0 24px 70px rgba(0,0,0,0.6), 0 0 0 1px rgba(232,163,61,0.06);
+        }
+        .dock.open { display: flex; animation: dockIn 0.22s ease; }
+        @keyframes dockIn { from { transform: translateY(14px); opacity: 0; } to { transform: none; opacity: 1; } }
+        .dock-head {
+          display: flex; align-items: center; gap: 10px; padding: 12px 14px;
+          border-bottom: 1px solid var(--line); background: rgba(11,10,20,0.55);
+          cursor: grab; user-select: none; touch-action: none;
+        }
+        .dock-head:active { cursor: grabbing; }
+        .dock-title {
+          flex: 1; display: flex; align-items: center; gap: 9px;
+          font-family: var(--display); font-size: 16px; letter-spacing: 0.1em;
+        }
+        .dock-title .om-mark { font-family: var(--deva); color: var(--ember); font-size: 19px; line-height: 1; }
+        .dock-voice { display: flex; gap: 6px; align-items: center; }
+        .dock-voice .voice-label {
+          font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.14em;
+          text-transform: uppercase; color: var(--ash); margin-right: 2px;
+        }
+        .dock-min {
+          background: transparent; border: none; color: var(--ash);
+          font-size: 18px; line-height: 1; padding: 4px 9px; border-radius: 4px;
+        }
+        .dock-min:hover { color: var(--ember); background: var(--ember-soft); }
+        .dock-log { flex: 1; overflow-y: auto; padding: 18px 16px 4px; min-height: 180px; }
+        .dock-log::-webkit-scrollbar { width: 8px; }
+        .dock-log::-webkit-scrollbar-thumb { background: rgba(232,163,61,0.25); border-radius: 4px; }
+        .dock-chips { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 16px 14px; }
+        .dock-chips .chip { font-size: 11.5px; padding: 7px 13px; }
+        .dock-input {
+          display: flex; gap: 8px; border-top: 1px solid var(--line);
+          padding: 10px; background: rgba(11,10,20,0.5);
+        }
+        .dock-input textarea {
+          flex: 1; resize: none; background: transparent; border: none; color: #EDE9F5;
+          font-family: var(--body); font-size: 17px; line-height: 1.45;
+          min-height: 44px; max-height: 120px; padding: 10px;
+        }
+        .dock-input textarea::placeholder { color: rgba(154,149,175,0.7); }
+        .dock-input textarea:focus { outline: none; }
+        .dock-input .btn { align-self: flex-end; }
+        @media (max-width: 720px) {
+          .dock {
+            right: 0; left: 0; bottom: 0; width: 100%;
+            max-height: 78vh; border-radius: 14px 14px 0 0;
+            border-left: none; border-right: none; border-bottom: none;
+          }
+          .dock-head { cursor: default; }
+        }
+
+        /* ---------- floating action button ---------- */
+        .fab {
+          position: fixed; right: 22px; bottom: 22px; z-index: 89;
+          width: 62px; height: 62px; border-radius: 50%;
+          display: flex; align-items: center; justify-content: center;
+          background: radial-gradient(circle at 32% 30%, #F2B657, var(--ember) 60%, #C9812A);
+          border: 1px solid rgba(255,238,204,0.5); color: #1A1206;
+          font-family: var(--deva); font-size: 28px; line-height: 1;
+          box-shadow: 0 10px 32px rgba(232,163,61,0.3), 0 4px 14px rgba(0,0,0,0.5);
+          transition: transform 0.15s ease;
+          animation: fabBreath 7s ease-in-out infinite;
+        }
+        .fab:hover { transform: scale(1.07); }
+        .fab.hidden { display: none; }
+        @keyframes fabBreath {
+          0%, 100% { box-shadow: 0 10px 32px rgba(232,163,61,0.22), 0 4px 14px rgba(0,0,0,0.5); }
+          50% { box-shadow: 0 10px 44px rgba(232,163,61,0.5), 0 4px 14px rgba(0,0,0,0.5); }
+        }
+        .fab-dot {
+          position: absolute; top: 3px; right: 3px; width: 13px; height: 13px;
+          border-radius: 50%; background: #E85D4A; border: 2px solid var(--night);
+        }
+        @media (max-width: 720px) { .fab { right: 16px; bottom: 16px; } }
 
         /* ---------- library (manuscript room) ---------- */
         .library { background: var(--manuscript); color: var(--ink); }
@@ -766,7 +993,9 @@ export default function SanatanaGuide() {
         </div>
         <div className="nav-links">
           <a href="#reading">The Way of Reading</a>
-          <a href="#ask">Ask the Guide</a>
+          <button className="nav-ask" onClick={openDock}>
+            Ask the Guide
+          </button>
           <a href="#library">The Library</a>
           <a href="#sources" onClick={() => setTab("sources")}>
             Sources
@@ -789,9 +1018,9 @@ export default function SanatanaGuide() {
             time.
           </p>
           <div className="hero-ctas">
-            <a className="btn" href="#ask">
+            <button className="btn" onClick={openDock}>
               Ask the guide
-            </a>
+            </button>
             <a className="btn ghost" href="#library">
               Read the sources
             </a>
@@ -822,6 +1051,12 @@ export default function SanatanaGuide() {
                 Self — claims meant to hold in any century. This is the layer
                 the guide treats as principle.
               </p>
+              <div className="method-eg">
+                <strong>In practice</strong>
+                Gravity was true before anyone named it. "You are not your
+                thoughts" is that kind of claim — a description of how things
+                are, not a rule of any era.
+              </div>
             </div>
             <div className="method-card">
               <span className="step deva">॥ २ ॥</span>
@@ -833,6 +1068,12 @@ export default function SanatanaGuide() {
                 it: dharma differs by age. When smṛti conflicts with śruti,
                 the tradition's own rule is that śruti prevails.
               </p>
+              <div className="method-eg">
+                <strong>In practice</strong>
+                Think of a company handbook from 1975 — sincere, binding in its
+                day, absurd for judging remote work. Keep its concern for
+                fairness; retire its clauses.
+              </div>
             </div>
             <div className="method-card">
               <span className="step deva">॥ ३ ॥</span>
@@ -844,6 +1085,11 @@ export default function SanatanaGuide() {
                 the question a text was answering, not the answer frozen in its
                 era.
               </p>
+              <div className="method-eg">
+                <strong>In practice</strong>
+                "Don't overload the bullock cart" becomes "don't overload the
+                truck." The vehicle changed; the care behind the rule didn't.
+              </div>
             </div>
           </div>
 
@@ -859,7 +1105,7 @@ export default function SanatanaGuide() {
         <span>॥ ॐ ॥</span>
       </div>
 
-      {/* ------------------------------ chat ------------------------ */}
+      {/* --------------------- ask section (launcher) ---------------- */}
       <section className="section" id="ask">
         <div className="shell" style={{ maxWidth: 820 }}>
           <div className="section-head" style={{ textAlign: "center" }}>
@@ -867,82 +1113,36 @@ export default function SanatanaGuide() {
             <h2>Ask anything. Get the essence, not the dogma.</h2>
             <p className="lede" style={{ margin: "14px auto 0" }}>
               Everyday questions welcome — work, anger, grief, purpose. The
-              guide answers from the texts, cites its sources, and tells you
-              when a rule belonged to another age.
+              guide answers from the texts, cites its sources, closes with a
+              real-world example, and tells you when a rule belonged to
+              another age.
             </p>
           </div>
 
-          <div className="chat-frame">
-            <div className="chat-log">
-              {messages.length === 0 && !loading && (
-                <div className="chat-empty">
-                  <span className="om-big">ॐ</span>
-                  Begin with whatever is actually on your mind.
-                  <br />
-                  The guide will meet you there.
-                </div>
-              )}
-              {messages.map((m, i) => (
-                <div key={i} className={`msg ${m.role === "user" ? "user" : "guide"}`}>
-                  <div className="msg-bubble">
-                    <span className="msg-label">
-                      {m.role === "user" ? "You" : "Sanātana"}
-                    </span>
-                    {m.content}
-                  </div>
-                </div>
-              ))}
-              {loading && (
-                <div className="chat-wait">
-                  <span className="pulse" /> consulting the texts…
-                </div>
-              )}
-              <div ref={chatEndRef} />
-            </div>
-            {error && <div className="chat-error">{error}</div>}
-            <div className="provider-row">
-              <span className="provider-label">Guide's voice</span>
-              {[
-                { id: "anthropic", label: "Claude" },
-                { id: "openai", label: "OpenAI" },
-              ].map((p) => (
+          <div className="launcher">
+            <span className="om-big" aria-hidden="true">
+              ॐ
+            </span>
+            <p>
+              The guide floats with you now. Open it from the glowing bindu in
+              the corner and it stays at your side while you scroll and read —
+              drag it anywhere on the screen.
+            </p>
+            <button className="btn" onClick={openDock}>
+              Open the guide
+            </button>
+            <div className="chips">
+              {SUGGESTIONS.map((s) => (
                 <button
-                  key={p.id}
-                  className={`provider-btn ${provider === p.id ? "active" : ""}`}
-                  onClick={() => setProvider(p.id)}
+                  key={s}
+                  className="chip"
+                  onClick={() => askFromPage(s)}
                   disabled={loading}
-                  aria-pressed={provider === p.id}
                 >
-                  {p.label}
+                  {s}
                 </button>
               ))}
             </div>
-            <div className="chat-input">
-              <textarea
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={onKeyDown}
-                placeholder="Ask the guide — e.g. how do I stop worrying about results?"
-                aria-label="Your question for the guide"
-                rows={2}
-              />
-              <button
-                className="btn"
-                onClick={() => send()}
-                disabled={loading || !input.trim()}
-                style={{ alignSelf: "flex-end", opacity: loading || !input.trim() ? 0.5 : 1 }}
-              >
-                Ask
-              </button>
-            </div>
-          </div>
-
-          <div className="chips">
-            {SUGGESTIONS.map((s) => (
-              <button key={s} className="chip" onClick={() => send(s)} disabled={loading}>
-                {s}
-              </button>
-            ))}
           </div>
         </div>
       </section>
@@ -1035,6 +1235,113 @@ export default function SanatanaGuide() {
         </p>
         <div className="fine">śruti · smṛti · viveka — built with three.js & Claude</div>
       </footer>
+
+      {/* ----------------- floating guide dock + bindu --------------- */}
+      <div
+        className={`dock ${dockOpen ? "open" : ""}`}
+        role="dialog"
+        aria-label="Sanātana — ask the guide"
+        ref={panelRef}
+      >
+        <div className="dock-head" onPointerDown={startDrag}>
+          <span className="dock-title">
+            <span className="om-mark">ॐ</span> SANĀTANA
+          </span>
+          <div className="dock-voice">
+            <span className="voice-label">Voice</span>
+            {[
+              { id: "anthropic", label: "Claude" },
+              { id: "openai", label: "OpenAI" },
+            ].map((p) => (
+              <button
+                key={p.id}
+                className={`provider-btn ${provider === p.id ? "active" : ""}`}
+                onClick={() => setProvider(p.id)}
+                disabled={loading}
+                aria-pressed={provider === p.id}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+          <button
+            className="dock-min"
+            onClick={() => setDockOpen(false)}
+            aria-label="Minimize the guide"
+            title="Minimize (Esc)"
+          >
+            —
+          </button>
+        </div>
+
+        <div className="dock-log" aria-live="polite">
+          {messages.length === 0 && !loading && (
+            <div className="chat-empty">
+              <span className="om-big">ॐ</span>
+              Begin with whatever is actually on your mind.
+              <br />
+              The guide will meet you there.
+            </div>
+          )}
+          {messages.map((m, i) => (
+            <div key={i} className={`msg ${m.role === "user" ? "user" : "guide"}`}>
+              <div className="msg-bubble">
+                <span className="msg-label">
+                  {m.role === "user" ? "You" : "Sanātana"}
+                </span>
+                {m.role === "user" ? m.content : renderGuideMessage(m.content)}
+              </div>
+            </div>
+          ))}
+          {loading && (
+            <div className="chat-wait">
+              <span className="pulse" /> consulting the texts…
+            </div>
+          )}
+          <div ref={chatEndRef} />
+        </div>
+
+        {error && <div className="chat-error">{error}</div>}
+
+        {messages.length === 0 && !loading && (
+          <div className="dock-chips">
+            {SUGGESTIONS.slice(0, 3).map((s) => (
+              <button key={s} className="chip" onClick={() => send(s)}>
+                {s}
+              </button>
+            ))}
+          </div>
+        )}
+
+        <div className="dock-input">
+          <textarea
+            ref={inputRef}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={onKeyDown}
+            placeholder="Ask the guide…"
+            aria-label="Your question for the guide"
+            rows={1}
+          />
+          <button
+            className="btn small"
+            onClick={() => send()}
+            disabled={loading || !input.trim()}
+          >
+            Ask
+          </button>
+        </div>
+      </div>
+
+      <button
+        className={`fab ${dockOpen ? "hidden" : ""}`}
+        onClick={openDock}
+        aria-label="Open the guide"
+        title="Ask the guide"
+      >
+        <span aria-hidden="true">ॐ</span>
+        {unread && <span className="fab-dot" aria-hidden="true" />}
+      </button>
     </div>
   );
 }
