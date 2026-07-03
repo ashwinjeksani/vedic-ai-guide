@@ -6,8 +6,9 @@ dist/
 .api-server.pid
 .api-server.log
 
-# built frontend copied into the server for deploy
-public/
+# built frontend copied into the server for deploy (repo-root only,
+# so frontend/public/ source assets like favicon.svg stay tracked)
+/public/
 
 # SQLite database (created at runtime / on the Render disk)
 *.db
