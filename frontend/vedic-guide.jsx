@@ -1979,9 +1979,11 @@ export default function SanatanaGuide() {
         .chat-empty .om-big { font-family: var(--deva); font-size: 38px; color: var(--ember); opacity: 0.9; display: block; margin-bottom: 12px; }
         .msg { margin-bottom: 20px; display: flex; }
         .msg.user { justify-content: flex-end; }
-        .msg-bubble { max-width: 88%; padding: 13px 16px; border-radius: 4px; white-space: pre-wrap; font-size: 17px; }
-        .msg.user .msg-bubble { background: var(--ember-soft); border: 1px solid rgba(232,163,61,0.3); }
-        .msg.guide .msg-bubble { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); }
+        .msg-bubble { max-width: 100%; padding: 13px 16px; border-radius: 4px; white-space: pre-wrap; font-size: 17px; }
+        /* guide responses span the full chat width; user messages stay narrower + right-aligned */
+        .msg.user .msg-bubble { background: var(--ember-soft); border: 1px solid rgba(232,163,61,0.3); max-width: 84%; }
+        .msg.guide { display: block; }
+        .msg.guide .msg-bubble { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); max-width: 100%; }
         .msg-label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--copper); display: block; margin-bottom: 8px; }
         .msg-example {
           margin-top: 14px; padding: 12px 14px; border-left: 2px solid var(--ember);
@@ -2017,11 +2019,16 @@ export default function SanatanaGuide() {
           .hero h1 { font-size: clamp(28px, 7.4vw, 38px); margin-top: 12px; }
           .hero p.sub { font-size: 16px; }
           .hero-ctas { margin-top: 24px; }
-          /* chat occupies (nearly) the full width so messages are easy to read */
-          .guide-main { padding: 28px 8px 56px; }
-          .guide-main .section-head { margin-bottom: 18px; padding: 0 12px; }
-          .guide-inline .dock-log { max-height: 62vh; padding: 16px 12px 4px; }
-          .guide-inline .msg-bubble { max-width: 92%; font-size: 17px; line-height: 1.55; }
+          /* chat window occupies the FULL screen width on mobile */
+          .guide-main { padding: 28px 0 56px; }
+          .guide-main .section-head { margin-bottom: 18px; padding: 0 16px; }
+          .guide-inline {
+            margin-top: 18px; border-radius: 0;
+            border-left: none; border-right: none;
+          }
+          .guide-inline .dock-log { max-height: 64vh; padding: 16px 12px 4px; }
+          .guide-inline .msg-bubble { font-size: 17px; line-height: 1.55; }
+          .guide-inline .msg.user .msg-bubble { max-width: 88%; }
         }
 
         /* ---------- floating guide dock ---------- */
