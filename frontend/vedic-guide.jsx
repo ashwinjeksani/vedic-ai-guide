@@ -238,10 +238,10 @@ const STRINGS = {
     guest_label: "अतिथि",
     auth_signin_optional: "साइन इन / रजिस्टर",
     auth_pending_note:
-      "व्यवस्थापक की स्वीकृति तक आपकी पहुँच सीमित है। आप अभी एक प्रश्न पूछ सकते हैं।",
-    auth_limit_title: "आपने अपना निःशुल्क प्रश्न उपयोग कर लिया",
+      "आप अतिथि के रूप में पूछ रहे हैं — दिन में अधिकतम 10 प्रश्न। पासकी पंजीकृत करें और असीमित पहुँच के लिए अनुमति-सूची में जुड़ें।",
+    auth_limit_title: "आपने आज के निःशुल्क प्रश्न पूरे कर लिए हैं",
     auth_limit_p:
-      "पूर्ण पहुँच के लिए व्यवस्थापक से अनुमति-सूची में जोड़ने को कहें।",
+      "अतिथियों को दिन में 10 प्रश्न मिलते हैं। पासकी पंजीकृत करें और असीमित पहुँच के लिए व्यवस्थापक से अनुमति-सूची में जोड़ने को कहें।",
     auth_admin_hello: "आप व्यवस्थापक हैं।",
     auth_working: "कार्य हो रहा है…",
     auth_err_generic: "कुछ गड़बड़ हुई। पुनः प्रयास करें।",
@@ -354,10 +354,10 @@ const STRINGS = {
     guest_label: "అతిథి",
     auth_signin_optional: "సైన్ ఇన్ / నమోదు",
     auth_pending_note:
-      "నిర్వాహకుడు ఆమోదించే వరకు మీ ప్రవేశం పరిమితం. ఇప్పుడు మీరు ఒక ప్రశ్న అడగవచ్చు.",
-    auth_limit_title: "మీ ఉచిత ప్రశ్నను వాడేశారు",
+      "మీరు అతిథిగా అడుగుతున్నారు — రోజుకు గరిష్ఠంగా 10 ప్రశ్నలు. పాస్‌కీని నమోదు చేసుకుని, అపరిమిత ప్రవేశం కోసం అనుమతి-జాబితాలో చేరండి.",
+    auth_limit_title: "ఈరోజు ఉచిత ప్రశ్నలను మీరు పూర్తి చేశారు",
     auth_limit_p:
-      "పూర్తి ప్రవేశం కోసం అనుమతి-జాబితాలో చేర్చమని నిర్వాహకుడిని అడగండి.",
+      "అతిథులకు రోజుకు 10 ప్రశ్నలు ఉంటాయి. పాస్‌కీని నమోదు చేసుకుని, అపరిమిత ప్రవేశం కోసం అనుమతి-జాబితాలో చేర్చమని నిర్వాహకుడిని అడగండి.",
     auth_admin_hello: "మీరు నిర్వాహకులు.",
     auth_working: "జరుగుతోంది…",
     auth_err_generic: "ఏదో తప్పు జరిగింది. మళ్లీ ప్రయత్నించండి.",
@@ -470,9 +470,9 @@ const STRINGS = {
     guest_label: "访客",
     auth_signin_optional: "登录 / 注册",
     auth_pending_note:
-      "在管理员批准之前，你的访问受限。现在可以提一个问题。",
-    auth_limit_title: "你已用完免费提问",
-    auth_limit_p: "请管理员把你加入允许名单以获得完整访问。",
+      "你正以访客身份提问——每天最多 10 个问题。注册通行密钥并加入允许名单，即可获得不限量访问。",
+    auth_limit_title: "你已用完今天的免费提问",
+    auth_limit_p: "访客每天可提 10 个问题。注册通行密钥，并请管理员将你加入允许名单以获得不限量访问。",
     auth_admin_hello: "你是管理员。",
     auth_working: "处理中……",
     auth_err_generic: "出错了，请重试。",
@@ -832,7 +832,7 @@ const SUGGESTIONS = {
     { tag: "मृत्यु का भय", q: "मुझे मृत्यु का भय है। ग्रंथ मृत्यु के बारे में क्या कहते हैं?" },
     { tag: "पालन बनाम नियंत्रण", q: "बच्चों पर नियंत्रण किए बिना उनका पालन कैसे करूँ?" },
     { tag: "बुढ़ापे में अर्थ", q: "बुढ़ापे में, जब भूमिका ही न रही, तो जीवन का अर्थ कैसे पाऊँ?" },
-    { tag: "परिवार बनाम सच्चाई", q: "क्या सच्चाई से पहले परिवार को रखना ग़लत है?" },
+    { tag: "परिवार बनाम सच्चाई", q: "क्या काम पर ईमानदारी से पहले परिवार को रखना ग़लत है?" },
     { tag: "दोनों राहें दुखद", q: "जब दोनों सही रास्ते किसी को दुख दें, तो कैसे चुनूँ?" },
     { tag: "कभी संतोष नहीं", q: "मैं हर किसी से अपनी तुलना करता हूँ और कभी संतुष्ट नहीं होता।" },
   ],
@@ -846,7 +846,7 @@ const SUGGESTIONS = {
     { tag: "మరణ భయం", q: "నాకు మరణ భయం ఉంది. మరణం గురించి గ్రంథాలు ఏమి చెబుతాయి?" },
     { tag: "పెంపకం, నియంత్రణ", q: "పిల్లలను అదుపు చేయకుండా ఎలా పెంచాలి?" },
     { tag: "వృద్ధాప్యంలో అర్థం", q: "వృద్ధాప్యంలో, పాత్రే లేనప్పుడు జీవితానికి అర్థం ఎలా వెతకాలి?" },
-    { tag: "కుటుంబమా, నిజాయితీనా", q: "నిజాయితీ కంటే కుటుంబాన్ని ముందు ఉంచడం తప్పా?" },
+    { tag: "కుటుంబమా, నిజాయితీనా", q: "పనిలో నిజాయితీ కంటే కుటుంబాన్ని ముందు ఉంచడం తప్పా?" },
     { tag: "రెండూ బాధిస్తే", q: "రెండు సరైన దారులూ ఎవరినో బాధపెడితే ఎలా నిర్ణయించుకోవాలి?" },
     { tag: "ఎప్పుడూ చాలదు", q: "అందరితో పోల్చుకుంటూ నేనెప్పుడూ సరిపోనని అనిపిస్తుంది." },
   ],
@@ -860,7 +860,7 @@ const SUGGESTIONS = {
     { tag: "对死亡的恐惧", q: "我害怕死亡。典籍是如何看待死亡的？" },
     { tag: "养育与掌控", q: "如何不事事掌控地养育孩子？" },
     { tag: "暮年的意义", q: "年老了，角色不再，我该如何找到人生的意义？" },
-    { tag: "家庭与诚实", q: "把家庭放在诚实之前，是错的吗？" },
+    { tag: "家庭与诚实", q: "在工作中把家庭放在诚实之前，是错的吗？" },
     { tag: "两难抉择", q: "当两个正确的选择都会伤到人，我该如何抉择？" },
     { tag: "永不满足", q: "我总和别人比较，永远觉得自己不够好。" },
   ],
@@ -1071,6 +1071,11 @@ export default function SanatanaGuide() {
   const [tab, setTab] = useState("vedas");
   const [dockOpen, setDockOpen] = useState(false);
   const [unread, setUnread] = useState(false);
+  // On phones the guide lives inline in the page (see #ask) instead of a
+  // floating draggable window, which is awkward on small screens.
+  const [isMobile, setIsMobile] = useState(
+    () => typeof window !== "undefined" && window.matchMedia("(max-width: 720px)").matches
+  );
 
   // i18n + auth + admin state
   const [lang, setLang] = useState("en");
@@ -1342,9 +1347,24 @@ export default function SanatanaGuide() {
     window.addEventListener("pointerup", up);
   };
 
+  // Track viewport so we can swap the floating dock for the inline panel.
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 720px)");
+    const onChange = () => setIsMobile(mq.matches);
+    mq.addEventListener?.("change", onChange);
+    return () => mq.removeEventListener?.("change", onChange);
+  }, []);
+
   const openDock = () => {
-    setDockOpen(true);
     setUnread(false);
+    if (isMobile) {
+      // No floating window on mobile — reveal and focus the inline guide.
+      const el = document.getElementById("ask");
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+      setTimeout(() => inputRef.current?.focus(), 400);
+      return;
+    }
+    setDockOpen(true);
   };
 
   /* ---------------- chat ------------------------------------------- */
@@ -1544,6 +1564,191 @@ export default function SanatanaGuide() {
     );
   };
 
+  // The guide's body (language row, chat log, composer) — shared between the
+  // floating dock (desktop) and the inline panel in #ask (mobile).
+  const renderGuideBody = () => (
+    <React.Fragment>
+      {/* language row */}
+      <div className="dock-lang">
+        <LangSelect lang={lang} setLang={setLang} label={t("lang_label")} />
+      </div>
+
+      {/* identity / sign-in row — hidden entirely while AUTH_ENABLED is off */}
+      {(user || AUTH_ENABLED) && (
+        <div className="dock-id">
+          {user ? (
+            <React.Fragment>
+              <span className="who">
+                <b>{user.username}</b>
+                {user.role === "admin" && <span className="tag-admin"> admin</span>}
+              </span>
+              {user.role === "admin" && (
+                <button onClick={openAdmin}>{t("admin_title")}</button>
+              )}
+              <button onClick={doLogout}>{t("auth_signout")}</button>
+            </React.Fragment>
+          ) : (
+            <React.Fragment>
+              <span className="who guest">{t("guest_label")}</span>
+              <button
+                onClick={() => {
+                  setShowAuth((v) => !v);
+                  setAuthError(null);
+                }}
+                aria-expanded={showAuth}
+              >
+                {t("auth_signin_optional")}
+              </button>
+            </React.Fragment>
+          )}
+        </div>
+      )}
+
+      {/* on-demand auth panel (register / login) */}
+      {AUTH_ENABLED && !user && showAuth && (
+        <div className="auth">
+          <button
+            className="auth-close"
+            onClick={() => setShowAuth(false)}
+            aria-label="Close"
+          >
+            ×
+          </button>
+          <h3>
+            {authMode === "register" ? t("auth_gate_title") : t("auth_signin_title")}
+          </h3>
+          <p>{authMode === "register" ? t("auth_gate_p") : t("auth_signin_p")}</p>
+          {authError && <div className="auth-error">{authError}</div>}
+          <input
+            className="auth-field"
+            value={authName}
+            onChange={(e) => setAuthName(e.target.value)}
+            placeholder={t("auth_username")}
+            aria-label={t("auth_username")}
+            onKeyDown={(e) => {
+              if (e.key === "Enter")
+                authMode === "register" ? doRegister() : doLogin();
+            }}
+          />
+          <button
+            className="btn"
+            onClick={authMode === "register" ? doRegister : doLogin}
+            disabled={authBusy || !authName.trim()}
+          >
+            {authBusy
+              ? t("auth_working")
+              : authMode === "register"
+              ? t("auth_register")
+              : t("auth_login")}
+          </button>
+          {authNote && <div className="auth-note">{authNote}</div>}
+          <div className="auth-switch">
+            {authMode === "register" ? (
+              <React.Fragment>
+                {t("auth_have")}{" "}
+                <button onClick={() => { setAuthMode("login"); setAuthError(null); }}>
+                  {t("auth_login")}
+                </button>
+              </React.Fragment>
+            ) : (
+              <React.Fragment>
+                {t("auth_need_account")}{" "}
+                <button onClick={() => { setAuthMode("register"); setAuthError(null); }}>
+                  {t("auth_register")}
+                </button>
+              </React.Fragment>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* chat log — always visible */}
+      <div className="dock-log" aria-live="polite">
+        {!allowlisted && messages.length === 0 && !loading && (
+          <div className="chat-empty" style={{ paddingBottom: 14 }}>
+            {t("auth_pending_note")}
+          </div>
+        )}
+        {messages.length === 0 && !loading && (
+          <div className="chat-empty">
+            <span className="om-big">ॐ</span>
+            {t("dock_empty_1")}
+            <br />
+            {t("dock_empty_2")}
+          </div>
+        )}
+        {messages.map((m, i) => (
+          <div key={i} className={`msg ${m.role === "user" ? "user" : "guide"}`}>
+            <div className="msg-bubble">
+              <span className="msg-label">
+                {m.role === "user" ? t("label_you") : "Sanātana"}
+              </span>
+              {m.role === "user" ? m.content : renderGuideMessage(m.content)}
+            </div>
+          </div>
+        ))}
+        {loading && (
+          <div className="chat-wait">
+            <span className="pulse" /> {t("dock_consulting")}
+          </div>
+        )}
+        <div ref={chatEndRef} />
+      </div>
+
+      {error && <div className="chat-error">{error}</div>}
+
+      {/* limit state replaces the composer; otherwise the composer */}
+      {atLimit ? (
+        <div className="limit-box">
+          <h3>{t("auth_limit_title")}</h3>
+          <p>{limitMsg || t("auth_limit_p")}</p>
+          {AUTH_ENABLED && !user && (
+            <button
+              className="btn"
+              onClick={() => {
+                setAuthMode("register");
+                setShowAuth(true);
+              }}
+            >
+              {t("auth_register")}
+            </button>
+          )}
+        </div>
+      ) : (
+        <React.Fragment>
+          {messages.length === 0 && !loading && (
+            <div className="dock-chips">
+              {(SUGGESTIONS[lang] || SUGGESTIONS.en).slice(0, 4).map((s) => (
+                <button key={s.q} className="chip" onClick={() => send(s.q)} title={s.q}>
+                  {s.tag}
+                </button>
+              ))}
+            </div>
+          )}
+
+          <div className="dock-input">
+            <textarea
+              ref={inputRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={onKeyDown}
+              placeholder={t("dock_placeholder")}
+              aria-label={t("dock_placeholder")}
+              rows={1}
+            />
+            <button
+              className="btn small"
+              onClick={() => send()}
+              disabled={loading || !input.trim()}
+            >
+              {t("dock_send")}
+            </button>
+          </div>
+        </React.Fragment>
+      )}
+    </React.Fragment>
+  );
+
   const allowlisted = user?.status === "allowlisted";
   const atLimit = limitReached && !allowlisted;
 
@@ -1553,6 +1758,7 @@ export default function SanatanaGuide() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Marcellus&family=Crimson+Pro:ital,wght@0,400;0,500;0,600;1,400;1,500&family=IBM+Plex+Mono:wght@400;500&family=Noto+Serif+Devanagari:wght@400;600&display=swap');
 
+        html, body { margin: 0; padding: 0; background: #0B0A14; }
         .sana {
           --night: #0B0A14;
           --raised: #17142A;
@@ -1608,20 +1814,41 @@ export default function SanatanaGuide() {
           backdrop-filter: blur(8px);
         }
         .nav-brand {
-          font-family: var(--display); font-size: 20px; letter-spacing: 0.14em;
-          color: #EDE9F5; display: flex; align-items: center; gap: 12px;
+          font-family: var(--display); font-size: 20px; letter-spacing: 0.14em; line-height: 1;
+          color: #EDE9F5; display: flex; align-items: center; gap: 11px;
         }
         .nav-brand .om-mark {
-          font-family: var(--deva); color: var(--ember); font-size: 24px; line-height: 1;
+          font-family: var(--deva); color: var(--ember); font-size: 24px; line-height: 1.5;
+          text-shadow: 0 0 14px rgba(232,163,61,0.55), 0 0 30px rgba(232,163,61,0.25);
         }
+        .nav-right { display: flex; align-items: center; gap: 26px; }
         .nav-links { display: flex; gap: 28px; align-items: center; }
-        .nav-links a, .nav-links button.nav-ask {
+        .nav-links a {
           font-family: var(--mono); font-size: 12px; letter-spacing: 0.16em;
           text-transform: uppercase; color: var(--ash);
           background: transparent; border: none;
         }
-        .nav-links a:hover, .nav-links button.nav-ask:hover { color: var(--ember); text-decoration: none; }
-        @media (max-width: 720px) { .nav-links { display: none; } }
+        .nav-links a:hover { color: var(--ember); text-decoration: none; }
+        /* prominent, always-visible toggle to the guide */
+        .nav-guide-cta {
+          display: inline-flex; align-items: center; gap: 9px; cursor: pointer; line-height: 1;
+          font-family: var(--mono); font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase;
+          color: #1A1206; background: var(--ember); border: 1px solid var(--ember);
+          border-radius: 100px; padding: 1px 1px 1px 1px; white-space: nowrap;
+          box-shadow: 0 0 18px rgba(232,163,61,0.25);
+          transition: transform 0.15s ease, background 0.2s ease, box-shadow 0.2s ease;
+        }
+        .nav-guide-cta:hover { transform: translateY(-1px); background: #F2B657; box-shadow: 0 0 26px rgba(232,163,61,0.4); }
+        .nav-guide-cta .om {
+          font-family: var(--deva); font-size: 20px; line-height: 1;
+          display: inline-block; transform: translateY(4px);
+        }
+        .nav-guide-cta .cta-label { display: inline-flex; align-items: center; }
+        @media (max-width: 720px) {
+          .nav-links { display: none; }
+          .nav { padding: 12px 18px; }
+          .nav-guide-cta { font-size: 11px; padding: 8px 14px; }
+        }
 
         /* ---------- hero ---------- */
         .hero { position: relative; height: 100vh; min-height: 640px; overflow: hidden; }
@@ -1773,6 +2000,30 @@ export default function SanatanaGuide() {
         @keyframes sanaPulse { 0%,100% { transform: scale(0.7); opacity: 0.5; } 50% { transform: scale(1.15); opacity: 1; } }
         .chat-error { color: #E88A6A; padding: 0 16px 12px; font-size: 16px; }
 
+        /* ---------- inline guide panel (mobile): same pieces as the dock ---------- */
+        .guide-inline {
+          display: flex; flex-direction: column;
+          background: var(--raised); border: 1px solid var(--line);
+          border-radius: 10px; overflow: hidden; margin-top: 22px;
+          box-shadow: 0 18px 50px rgba(0,0,0,0.4);
+        }
+        .guide-inline .dock-log { max-height: 60vh; min-height: 240px; }
+        /* on mobile the guide is the main section, right under the hero */
+        .guide-main { padding-top: 44px; padding-bottom: 72px; }
+        @media (max-width: 720px) {
+          .hero { height: auto; min-height: 78vh; }
+          /* start hero content below the fixed nav instead of centering it */
+          .hero-copy { justify-content: flex-start; padding-top: 104px; padding-bottom: 44px; }
+          .hero h1 { font-size: clamp(28px, 7.4vw, 38px); margin-top: 12px; }
+          .hero p.sub { font-size: 16px; }
+          .hero-ctas { margin-top: 24px; }
+          /* chat occupies (nearly) the full width so messages are easy to read */
+          .guide-main { padding: 28px 8px 56px; }
+          .guide-main .section-head { margin-bottom: 18px; padding: 0 12px; }
+          .guide-inline .dock-log { max-height: 62vh; padding: 16px 12px 4px; }
+          .guide-inline .msg-bubble { max-width: 92%; font-size: 17px; line-height: 1.55; }
+        }
+
         /* ---------- floating guide dock ---------- */
         .dock {
           position: fixed; right: 22px; bottom: 22px; z-index: 90;
@@ -1796,7 +2047,7 @@ export default function SanatanaGuide() {
           flex: 1; display: flex; align-items: center; gap: 9px;
           font-family: var(--display); font-size: 16px; letter-spacing: 0.1em;
         }
-        .dock-title .om-mark { font-family: var(--deva); color: var(--ember); font-size: 19px; line-height: 1; }
+        .dock-title .om-mark { font-family: var(--deva); color: var(--ember); font-size: 20px; line-height: 1; text-shadow: 0 0 10px rgba(232,163,61,0.5); }
         .dock-min {
           background: transparent; border: none; color: var(--ash);
           font-size: 18px; line-height: 1; padding: 4px 9px; border-radius: 4px;
@@ -2046,21 +2297,25 @@ export default function SanatanaGuide() {
         <div className="nav-brand">
           <span className="om-mark">ॐ</span> SANĀTANA
         </div>
-        <div className="nav-links">
-          <a href="#reading">{t("nav_reading")}</a>
-          <button className="nav-ask" onClick={openDock}>
-            {t("nav_ask")}
+        <div className="nav-right">
+          <div className="nav-links">
+            <a href="#reading">{t("nav_reading")}</a>
+            <a href="#library">{t("nav_library")}</a>
+            <a href="#sources" onClick={() => setTab("sources")}>
+              {t("nav_sources")}
+            </a>
+            <LangSelect
+              lang={lang}
+              setLang={setLang}
+              label={t("lang_label")}
+              className="nav-lang-desktop"
+            />
+          </div>
+          {/* prominent, always-visible toggle to the guide (the second main) */}
+          <button className="nav-guide-cta" onClick={openDock}>
+            <span className="om" aria-hidden="true">ॐ</span>
+            <span className="cta-label">{t("nav_ask")}</span>
           </button>
-          <a href="#library">{t("nav_library")}</a>
-          <a href="#sources" onClick={() => setTab("sources")}>
-            {t("nav_sources")}
-          </a>
-          <LangSelect
-            lang={lang}
-            setLang={setLang}
-            label={t("lang_label")}
-            className="nav-lang-desktop"
-          />
         </div>
       </nav>
 
@@ -2085,6 +2340,19 @@ export default function SanatanaGuide() {
         </div>
         <div className="hero-scroll">{t("hero_scroll")}</div>
       </header>
+
+      {/* mobile: the guide is the main event, right under the hero */}
+      {isMobile && (
+        <section className="section guide-main" id="ask">
+          <div className="shell" style={{ maxWidth: 820 }}>
+            <div className="section-head" style={{ textAlign: "center", marginBottom: 22 }}>
+              <span className="eyebrow">{t("ask_eyebrow")}</span>
+              <h2>{t("ask_title")}</h2>
+            </div>
+            <div className="guide-inline">{renderGuideBody()}</div>
+          </div>
+        </section>
+      )}
 
       {/* --------------------------- reading method ----------------- */}
       <section className="section" id="reading">
@@ -2139,41 +2407,40 @@ export default function SanatanaGuide() {
         <span>॥ ॐ ॥</span>
       </div>
 
-      {/* --------------------- ask section (launcher) ---------------- */}
-      <section className="section" id="ask">
-        <div className="shell" style={{ maxWidth: 820 }}>
-          <div className="section-head" style={{ textAlign: "center" }}>
-            <span className="eyebrow">{t("ask_eyebrow")}</span>
-            <h2>{t("ask_title")}</h2>
-            <p className="lede" style={{ margin: "14px auto 0" }}>
-              {t("ask_lede")}
-            </p>
-          </div>
-
-          <div className="launcher">
-            <span className="om-big" aria-hidden="true">
-              ॐ
-            </span>
-            <p>{t("launcher_p")}</p>
-            <button className="btn" onClick={openDock}>
-              {t("launcher_open")}
-            </button>
-            <div className="chip-cloud">
-              {(SUGGESTIONS[lang] || SUGGESTIONS.en).map((s, i) => (
-                <button
-                  key={s.q}
-                  className={`cloud-chip s${i % 4}`}
-                  onClick={() => askFromPage(s.q)}
-                  disabled={loading}
-                  title={s.q}
-                >
-                  {s.tag}
-                </button>
-              ))}
+      {/* ask section (launcher) — desktop only; on mobile the guide sits up top */}
+      {!isMobile && (
+        <section className="section" id="ask">
+          <div className="shell" style={{ maxWidth: 820 }}>
+            <div className="section-head" style={{ textAlign: "center" }}>
+              <span className="eyebrow">{t("ask_eyebrow")}</span>
+              <h2>{t("ask_title")}</h2>
+              <p className="lede" style={{ margin: "14px auto 0" }}>
+                {t("ask_lede")}
+              </p>
+            </div>
+            <div className="launcher">
+              <span className="om-big" aria-hidden="true">ॐ</span>
+              <p>{t("launcher_p")}</p>
+              <button className="btn" onClick={openDock}>
+                {t("launcher_open")}
+              </button>
+              <div className="chip-cloud">
+                {(SUGGESTIONS[lang] || SUGGESTIONS.en).map((s, i) => (
+                  <button
+                    key={s.q}
+                    className={`cloud-chip s${i % 4}`}
+                    onClick={() => askFromPage(s.q)}
+                    disabled={loading}
+                    title={s.q}
+                  >
+                    {s.tag}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* ---------------------------- library ----------------------- */}
       <section className="section library" id="library">
@@ -2271,7 +2538,9 @@ export default function SanatanaGuide() {
         <div className="fine">{t("footer_fine")}</div>
       </footer>
 
-      {/* ----------------- floating guide dock + bindu --------------- */}
+      {/* floating dock + FAB — desktop only; mobile uses the inline #ask panel */}
+      {!isMobile && (
+      <React.Fragment>
       <div
         className={`dock ${dockOpen ? "open" : ""}`}
         role="dialog"
@@ -2291,185 +2560,7 @@ export default function SanatanaGuide() {
             —
           </button>
         </div>
-
-        {/* language row */}
-        <div className="dock-lang">
-          <LangSelect lang={lang} setLang={setLang} label={t("lang_label")} />
-        </div>
-
-        {/* identity / sign-in row — hidden entirely while AUTH_ENABLED is off */}
-        {(user || AUTH_ENABLED) && (
-          <div className="dock-id">
-            {user ? (
-              <React.Fragment>
-                <span className="who">
-                  <b>{user.username}</b>
-                  {user.role === "admin" && <span className="tag-admin"> admin</span>}
-                </span>
-                {user.role === "admin" && (
-                  <button onClick={openAdmin}>{t("admin_title")}</button>
-                )}
-                <button onClick={doLogout}>{t("auth_signout")}</button>
-              </React.Fragment>
-            ) : (
-              <React.Fragment>
-                <span className="who guest">{t("guest_label")}</span>
-                <button
-                  onClick={() => {
-                    setShowAuth((v) => !v);
-                    setAuthError(null);
-                  }}
-                  aria-expanded={showAuth}
-                >
-                  {t("auth_signin_optional")}
-                </button>
-              </React.Fragment>
-            )}
-          </div>
-        )}
-
-        {/* on-demand auth panel (register / login) */}
-        {AUTH_ENABLED && !user && showAuth && (
-          <div className="auth">
-            <button
-              className="auth-close"
-              onClick={() => setShowAuth(false)}
-              aria-label="Close"
-            >
-              ×
-            </button>
-            <h3>
-              {authMode === "register" ? t("auth_gate_title") : t("auth_signin_title")}
-            </h3>
-            <p>{authMode === "register" ? t("auth_gate_p") : t("auth_signin_p")}</p>
-            {authError && <div className="auth-error">{authError}</div>}
-            <input
-              className="auth-field"
-              value={authName}
-              onChange={(e) => setAuthName(e.target.value)}
-              placeholder={t("auth_username")}
-              aria-label={t("auth_username")}
-              onKeyDown={(e) => {
-                if (e.key === "Enter")
-                  authMode === "register" ? doRegister() : doLogin();
-              }}
-            />
-            <button
-              className="btn"
-              onClick={authMode === "register" ? doRegister : doLogin}
-              disabled={authBusy || !authName.trim()}
-            >
-              {authBusy
-                ? t("auth_working")
-                : authMode === "register"
-                ? t("auth_register")
-                : t("auth_login")}
-            </button>
-            {authNote && <div className="auth-note">{authNote}</div>}
-            <div className="auth-switch">
-              {authMode === "register" ? (
-                <React.Fragment>
-                  {t("auth_have")}{" "}
-                  <button onClick={() => { setAuthMode("login"); setAuthError(null); }}>
-                    {t("auth_login")}
-                  </button>
-                </React.Fragment>
-              ) : (
-                <React.Fragment>
-                  {t("auth_need_account")}{" "}
-                  <button onClick={() => { setAuthMode("register"); setAuthError(null); }}>
-                    {t("auth_register")}
-                  </button>
-                </React.Fragment>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* chat log — always visible */}
-        <div className="dock-log" aria-live="polite">
-          {!allowlisted && messages.length === 0 && !loading && (
-            <div className="chat-empty" style={{ paddingBottom: 14 }}>
-              {t("auth_pending_note")}
-            </div>
-          )}
-          {messages.length === 0 && !loading && (
-            <div className="chat-empty">
-              <span className="om-big">ॐ</span>
-              {t("dock_empty_1")}
-              <br />
-              {t("dock_empty_2")}
-            </div>
-          )}
-          {messages.map((m, i) => (
-            <div key={i} className={`msg ${m.role === "user" ? "user" : "guide"}`}>
-              <div className="msg-bubble">
-                <span className="msg-label">
-                  {m.role === "user" ? t("label_you") : "Sanātana"}
-                </span>
-                {m.role === "user" ? m.content : renderGuideMessage(m.content)}
-              </div>
-            </div>
-          ))}
-          {loading && (
-            <div className="chat-wait">
-              <span className="pulse" /> {t("dock_consulting")}
-            </div>
-          )}
-          <div ref={chatEndRef} />
-        </div>
-
-        {error && <div className="chat-error">{error}</div>}
-
-        {/* limit state replaces the composer; otherwise the composer */}
-        {atLimit ? (
-          <div className="limit-box">
-            <h3>{t("auth_limit_title")}</h3>
-            <p>{limitMsg || t("auth_limit_p")}</p>
-            {AUTH_ENABLED && !user && (
-              <button
-                className="btn"
-                onClick={() => {
-                  setAuthMode("register");
-                  setShowAuth(true);
-                }}
-              >
-                {t("auth_register")}
-              </button>
-            )}
-          </div>
-        ) : (
-          <React.Fragment>
-            {messages.length === 0 && !loading && (
-              <div className="dock-chips">
-                {(SUGGESTIONS[lang] || SUGGESTIONS.en).slice(0, 4).map((s) => (
-                  <button key={s.q} className="chip" onClick={() => send(s.q)} title={s.q}>
-                    {s.tag}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            <div className="dock-input">
-              <textarea
-                ref={inputRef}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={onKeyDown}
-                placeholder={t("dock_placeholder")}
-                aria-label={t("dock_placeholder")}
-                rows={1}
-              />
-              <button
-                className="btn small"
-                onClick={() => send()}
-                disabled={loading || !input.trim()}
-              >
-                {t("dock_send")}
-              </button>
-            </div>
-          </React.Fragment>
-        )}
+        {renderGuideBody()}
       </div>
 
       <button
@@ -2481,6 +2572,8 @@ export default function SanatanaGuide() {
         <span aria-hidden="true">ॐ</span>
         {unread && <span className="fab-dot" aria-hidden="true" />}
       </button>
+      </React.Fragment>
+      )}
 
       {/* ----------------------- admin panel ------------------------ */}
       {showAdmin && user && user.role === "admin" && (
