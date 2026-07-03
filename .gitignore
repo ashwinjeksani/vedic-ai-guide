@@ -14,3 +14,7 @@ public/
 *.db-shm
 *.db-wal
 *.sqlite
+
+# deployment config (kept local)
+DEPLOY.md
+render.yaml
