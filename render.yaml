@@ -16,10 +16,15 @@ services:
     name: sanatana
     runtime: node
     plan: free # upgrade to "starter" (~$7/mo) to remove cold-start spin-down
+    # NODE_ENV=production makes `npm install` skip devDependencies, but Vite is a
+    # devDependency — so force them in for the frontend build. Chain with && so any
+    # failure aborts the deploy instead of shipping an empty public/.
     buildCommand: |
-      npm --prefix frontend install && npm --prefix frontend run build
-      rm -rf server/../public && mkdir -p public && cp -r frontend/dist/* public/
-      npm --prefix server install
+      npm --prefix frontend install --include=dev && \
+      npm --prefix frontend run build && \
+      rm -rf public && mkdir -p public && cp -r frontend/dist/. public/ && \
+      npm --prefix server install && \
+      test -f public/index.html && echo "build ok: public/index.html present"
     startCommand: node server/index.js
     envVars:
       - key: NODE_ENV
