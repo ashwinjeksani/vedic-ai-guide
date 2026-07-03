@@ -293,7 +293,6 @@ export default function SanatanaGuide() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [tab, setTab] = useState("vedas");
-  const [provider, setProvider] = useState("anthropic");
   const [dockOpen, setDockOpen] = useState(false);
   const [unread, setUnread] = useState(false);
 
@@ -579,8 +578,8 @@ export default function SanatanaGuide() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          provider,
-          model: provider === "openai" ? "gpt-4o" : "claude-sonnet-5",
+          provider: "anthropic",
+          model: "claude-sonnet-5",
           max_tokens: 1000,
           system: SYSTEM_PROMPT,
           messages: next.map((m) => ({ role: m.role, content: m.content })),
@@ -842,13 +841,6 @@ export default function SanatanaGuide() {
         }
         @keyframes sanaPulse { 0%,100% { transform: scale(0.7); opacity: 0.5; } 50% { transform: scale(1.15); opacity: 1; } }
         .chat-error { color: #E88A6A; padding: 0 16px 12px; font-size: 16px; }
-        .provider-btn {
-          background: transparent; border: 1px solid var(--line); color: var(--ash);
-          border-radius: 999px; padding: 4px 12px; font-size: 13px; transition: all 0.2s;
-        }
-        .provider-btn:hover:not(:disabled) { border-color: var(--ember); color: var(--manuscript); }
-        .provider-btn.active { background: var(--ember-soft); border-color: var(--ember); color: var(--ember); }
-        .provider-btn:disabled { opacity: 0.5; cursor: default; }
 
         /* ---------- floating guide dock ---------- */
         .dock {
@@ -874,11 +866,6 @@ export default function SanatanaGuide() {
           font-family: var(--display); font-size: 16px; letter-spacing: 0.1em;
         }
         .dock-title .om-mark { font-family: var(--deva); color: var(--ember); font-size: 19px; line-height: 1; }
-        .dock-voice { display: flex; gap: 6px; align-items: center; }
-        .dock-voice .voice-label {
-          font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.14em;
-          text-transform: uppercase; color: var(--ash); margin-right: 2px;
-        }
         .dock-min {
           background: transparent; border: none; color: var(--ash);
           font-size: 18px; line-height: 1; padding: 4px 9px; border-radius: 4px;
@@ -1247,23 +1234,6 @@ export default function SanatanaGuide() {
           <span className="dock-title">
             <span className="om-mark">ॐ</span> SANĀTANA
           </span>
-          <div className="dock-voice">
-            <span className="voice-label">Voice</span>
-            {[
-              { id: "anthropic", label: "Claude" },
-              { id: "openai", label: "OpenAI" },
-            ].map((p) => (
-              <button
-                key={p.id}
-                className={`provider-btn ${provider === p.id ? "active" : ""}`}
-                onClick={() => setProvider(p.id)}
-                disabled={loading}
-                aria-pressed={provider === p.id}
-              >
-                {p.label}
-              </button>
-            ))}
-          </div>
           <button
             className="dock-min"
             onClick={() => setDockOpen(false)}

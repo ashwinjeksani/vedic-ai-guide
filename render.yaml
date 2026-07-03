@@ -1,0 +1,47 @@
+# Render Blueprint — deploys the Sanatana app as one web service.
+#
+# The build compiles the Vite frontend, copies it into server/../public,
+# installs server deps, and initializes the SQLite schema on the persistent disk.
+#
+# After first deploy, set the secret env vars in the Render dashboard
+# (they are intentionally marked sync:false so they are NOT stored in git).
+
+services:
+  - type: web
+    name: sanatana
+    runtime: node
+    plan: free # upgrade to "starter" (~$7/mo) to remove cold-start spin-down
+    buildCommand: |
+      npm --prefix frontend install && npm --prefix frontend run build
+      rm -rf server/../public && mkdir -p public && cp -r frontend/dist/* public/
+      npm --prefix server install
+      DB_PATH=/var/data/sanatana.db npm --prefix server run init-db
+    startCommand: node server/index.js
+    disk:
+      name: data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DB_PATH
+        value: /var/data/sanatana.db
+      - key: PORT
+        value: "10000"
+      - key: FREE_LIMIT
+        value: "1"
+      # ----- set these in the dashboard (Environment tab), not in git -----
+      - key: RP_ID
+        sync: false # e.g. sanatana.yourdomain.com
+      - key: ORIGIN
+        sync: false # e.g. https://sanatana.yourdomain.com
+      - key: RP_NAME
+        sync: false # e.g. Sanatana
+      - key: SESSION_SECRET
+        generateValue: true # Render generates a strong random value for you
+      - key: ADMIN_USERNAME
+        sync: false # the username you'll register first, to claim admin
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false

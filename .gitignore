@@ -3,3 +3,12 @@ dist/
 .env
 .dev-server.pid
 .dev-server.log
+
+# built frontend copied into the server for deploy
+public/
+
+# SQLite database (created at runtime / on the Render disk)
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
