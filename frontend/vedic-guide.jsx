@@ -883,6 +883,67 @@ async function apiAdminList() {
 async function apiAdminSetStatus(userId, status) {
   return postJSON("/api/admin/set-status", { userId, status });
 }
+
+/* ------------------------------------------------------------------ */
+/*  Language chooser — a click-to-open dropdown (not a flat button row) */
+/* ------------------------------------------------------------------ */
+
+function LangSelect({ lang, setLang, label, className = "", up = false }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  const current = LANGUAGES.find((l) => l.id === lang) || LANGUAGES[0];
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    const onKey = (e) => e.key === "Escape" && setOpen(false);
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  return (
+    <span className={`lang-select ${up ? "up" : ""} ${className}`} ref={ref}>
+      {label && <span className="lang-label">{label}</span>}
+      <button
+        type="button"
+        className="lang-trigger"
+        onClick={() => setOpen((o) => !o)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        title={current.label}
+      >
+        <span className="lang-current">{current.native}</span>
+        <span className="lang-caret" aria-hidden="true">▾</span>
+      </button>
+      {open && (
+        <ul className="lang-menu" role="listbox">
+          {LANGUAGES.map((l) => (
+            <li key={l.id} role="option" aria-selected={lang === l.id}>
+              <button
+                type="button"
+                className={`lang-option ${lang === l.id ? "active" : ""}`}
+                onClick={() => {
+                  setLang(l.id);
+                  setOpen(false);
+                }}
+              >
+                <span className="lang-native">{l.native}</span>
+                <span className="lang-en">{l.label}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </span>
+  );
+}
+
 export default function SanatanaGuide() {
   const mountRef = useRef(null);
   const chatEndRef = useRef(null);
@@ -1703,24 +1764,46 @@ export default function SanatanaGuide() {
         .footer p { color: var(--ash); max-width: 58ch; margin: 18px auto 0; font-size: 17.5px; }
         .footer .fine { font-family: var(--mono); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; margin-top: 34px; color: rgba(154,149,175,0.6); }
 
-        /* ---------- language switcher ---------- */
-        .lang-switch { display: flex; align-items: center; gap: 6px; }
-        .lang-switch .lang-label {
+        /* ---------- language switcher (click-to-open dropdown) ---------- */
+        .lang-select { position: relative; display: inline-flex; align-items: center; gap: 6px; }
+        .lang-select .lang-label {
           font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em;
-          text-transform: uppercase; color: var(--ash); margin-right: 2px;
+          text-transform: uppercase; color: var(--ash);
         }
-        .lang-btn {
-          background: transparent; border: 1px solid var(--line); color: var(--ash);
-          border-radius: 999px; padding: 4px 11px; font-size: 13px;
+        .lang-trigger {
+          display: inline-flex; align-items: center; gap: 6px;
+          background: transparent; border: 1px solid var(--line); color: var(--manuscript);
+          border-radius: 999px; padding: 5px 12px; font-size: 13px;
           font-family: var(--deva); transition: all 0.18s;
         }
-        .lang-btn:hover { border-color: var(--ember); color: var(--manuscript); }
-        .lang-btn.active { background: var(--ember-soft); border-color: var(--ember); color: var(--ember); }
+        .lang-trigger:hover { border-color: var(--ember); color: var(--manuscript); }
+        .lang-select .lang-caret { font-family: var(--body); font-size: 10px; color: var(--ash); transition: transform 0.18s; }
+        .lang-trigger[aria-expanded="true"] { border-color: var(--ember); color: var(--ember); }
+        .lang-trigger[aria-expanded="true"] .lang-caret { transform: rotate(180deg); color: var(--ember); }
+        .lang-menu {
+          position: absolute; top: calc(100% + 6px); right: 0; z-index: 120;
+          min-width: 168px; margin: 0; padding: 6px; list-style: none;
+          background: rgba(17,14,32,0.98); border: 1px solid var(--line);
+          border-radius: 10px; box-shadow: 0 18px 50px rgba(0,0,0,0.55);
+          backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+          animation: langIn 0.16s ease;
+        }
+        .lang-select.up .lang-menu { top: auto; bottom: calc(100% + 6px); }
+        @keyframes langIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+        .lang-option {
+          display: flex; align-items: baseline; gap: 10px; width: 100%;
+          background: transparent; border: none; color: var(--manuscript);
+          border-radius: 7px; padding: 8px 10px; text-align: left; transition: background 0.15s;
+        }
+        .lang-option:hover { background: rgba(232,163,61,0.10); }
+        .lang-option.active { background: var(--ember-soft); color: var(--ember); }
+        .lang-option .lang-native { font-family: var(--deva); font-size: 15px; }
+        .lang-option .lang-en { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ash); margin-left: auto; }
         @media (max-width: 720px) {
           .nav-lang-desktop { display: none; }
         }
-        .dock-lang { display: flex; gap: 5px; flex-wrap: wrap; padding: 10px 16px 0; }
-        .dock-lang .lang-btn { padding: 3px 10px; font-size: 12px; }
+        .dock-lang { display: flex; padding: 10px 16px 0; }
+        .dock-lang .lang-menu { right: auto; left: 0; }
 
         /* ---------- auth gate ---------- */
         .auth {
@@ -1813,20 +1896,12 @@ export default function SanatanaGuide() {
           <a href="#sources" onClick={() => setTab("sources")}>
             {t("nav_sources")}
           </a>
-          <span className="lang-switch nav-lang-desktop">
-            <span className="lang-label">{t("lang_label")}</span>
-            {LANGUAGES.map((l) => (
-              <button
-                key={l.id}
-                className={`lang-btn ${lang === l.id ? "active" : ""}`}
-                onClick={() => setLang(l.id)}
-                aria-pressed={lang === l.id}
-                title={l.label}
-              >
-                {l.native}
-              </button>
-            ))}
-          </span>
+          <LangSelect
+            lang={lang}
+            setLang={setLang}
+            label={t("lang_label")}
+            className="nav-lang-desktop"
+          />
         </div>
       </nav>
 
@@ -2039,17 +2114,7 @@ export default function SanatanaGuide() {
 
         {/* language row */}
         <div className="dock-lang">
-          {LANGUAGES.map((l) => (
-            <button
-              key={l.id}
-              className={`lang-btn ${lang === l.id ? "active" : ""}`}
-              onClick={() => setLang(l.id)}
-              aria-pressed={lang === l.id}
-              title={l.label}
-            >
-              {l.native}
-            </button>
-          ))}
+          <LangSelect lang={lang} setLang={setLang} label={t("lang_label")} />
         </div>
 
         {/* signed-in identity / admin entry */}
