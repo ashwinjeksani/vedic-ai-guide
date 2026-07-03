@@ -151,6 +151,7 @@ const STRINGS = {
     lib_tab_upavedas: "Upavedas & Vedāṅgas",
     lib_tab_smriti: "Smṛti Texts",
     lib_tab_sources: "Complete Texts",
+    lib_source_label: "Source",
     lib_reading_in_time: "Reading in time",
     lib_open_archive: "Open archive →",
     lib_disclaimer:
@@ -265,6 +266,7 @@ const STRINGS = {
     lib_tab_upavedas: "उपवेद और वेदांग",
     lib_tab_smriti: "स्मृति ग्रंथ",
     lib_tab_sources: "पूर्ण ग्रंथ",
+    lib_source_label: "स्रोत",
     lib_reading_in_time: "समय में पढ़ना",
     lib_open_archive: "संग्रह खोलें →",
     lib_disclaimer:
@@ -378,6 +380,7 @@ const STRINGS = {
     lib_tab_upavedas: "ఉపవేదాలు & వేదాంగాలు",
     lib_tab_smriti: "స్మృతి గ్రంథాలు",
     lib_tab_sources: "పూర్తి గ్రంథాలు",
+    lib_source_label: "మూలం",
     lib_reading_in_time: "కాలంలో చదవడం",
     lib_open_archive: "సంగ్రహం తెరవండి →",
     lib_disclaimer:
@@ -490,6 +493,7 @@ const STRINGS = {
     lib_tab_upavedas: "副吠陀与吠陀支",
     lib_tab_smriti: "圣传典籍",
     lib_tab_sources: "完整原文",
+    lib_source_label: "来源",
     lib_reading_in_time: "置于时代中读",
     lib_open_archive: "打开档案 →",
     lib_disclaimer:
@@ -851,6 +855,41 @@ const SUGGESTIONS = {
     "当两个正确的选择都会伤到人，我该如何抉择？",
     "我总和别人比较，永远觉得自己不够好。",
   ],
+};
+
+/* ------------------------------------------------------------------ */
+/*  What each Library section is — sourced, not paraphrased from       */
+/*  the model. See the `sources` links on each entry.                  */
+/* ------------------------------------------------------------------ */
+const SECTION_INFO = {
+  vedas: {
+    text:
+      "The oldest scriptures of Hinduism and the foundation of the tradition — śruti, “that which is heard.” Composed in Vedic Sanskrit, they form the oldest layer of Sanskrit literature: the Rigveda (c. 1500–1200 BCE), followed by the Sāmaveda, Yajurveda and Atharvaveda (c. 1200–900 BCE).",
+    sources: [{ label: "Wikipedia: Vedas", url: "https://en.wikipedia.org/wiki/Vedas" }],
+  },
+  upanishads: {
+    text:
+      "Late-Vedic Sanskrit texts, also called Vedānta (“the end of the Vedas”), that mark the turn from ritual toward inner inquiry. Still counted as śruti, they are the ground of Hindu philosophy — centred on Brahman (ultimate reality) and ātman (the Self), with liberation as their aim. About a dozen principal Upaniṣads are the oldest, roughly 800–300 BCE.",
+    sources: [{ label: "Wikipedia: Upanishads", url: "https://en.wikipedia.org/wiki/Upanishads" }],
+  },
+  upavedas: {
+    text:
+      "Two families of texts that support the Vedas. The Vedāṅgas (“limbs of the Veda”) are six auxiliary disciplines for studying and applying them — Śikṣā (phonetics), Chandas (meter), Vyākaraṇa (grammar), Nirukta (etymology), Kalpa (ritual) and Jyotiṣa (astronomy/timekeeping). The Upavedas (“applied knowledge”) are practical sciences tied to each Veda: Āyurveda (medicine), Dhanurveda (archery and warfare), Gāndharvaveda (music and dance) and Sthāpatyaveda (architecture).",
+    sources: [
+      { label: "Wikipedia: Vedanga", url: "https://en.wikipedia.org/wiki/Vedanga" },
+      { label: "Wisdomlib: Upaveda", url: "https://www.wisdomlib.org/definition/upaveda" },
+    ],
+  },
+  smriti: {
+    text:
+      "“That which is remembered” — the remembered, written tradition, rooted in or inspired by the Vedas but composed by named human authors and held to be less authoritative than śruti. It spans the epics (Mahābhārata, Rāmāyaṇa), the Purāṇas, the Dharmaśāstras, and much else on law, ethics and society.",
+    sources: [{ label: "Wikipedia: Smriti", url: "https://en.wikipedia.org/wiki/Smriti" }],
+  },
+  sources: {
+    text:
+      "Complete canonical texts in Sanskrit and translation, linked out to trusted digital archives so you can read each work in full.",
+    sources: [],
+  },
 };
 
 
@@ -1784,7 +1823,12 @@ export default function SanatanaGuide() {
         .library { background: var(--manuscript); color: var(--ink); }
         .library .eyebrow { color: var(--copper); }
         .library .section-head p.lede { color: var(--ink-soft); }
-        .lib-tabs { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 44px; }
+        .lib-tabs { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 26px; }
+        .lib-desc { max-width: 74ch; margin: 0 0 40px; }
+        .lib-desc p { color: var(--ink-soft); font-size: 16.5px; line-height: 1.62; }
+        .lib-src { margin-top: 10px; font-family: var(--mono); font-size: 12px; letter-spacing: 0.03em; color: var(--ink-soft); }
+        .lib-src a { color: var(--copper); text-decoration: underline; text-underline-offset: 3px; }
+        .lib-src a:hover { color: var(--ember); }
         .lib-tab {
           font-family: var(--mono); font-size: 12.5px; letter-spacing: 0.1em; text-transform: uppercase;
           background: transparent; color: var(--ink-soft);
@@ -2115,6 +2159,25 @@ export default function SanatanaGuide() {
               </button>
             ))}
           </div>
+
+          {SECTION_INFO[tab] && (
+            <div className="lib-desc">
+              <p>{SECTION_INFO[tab].text}</p>
+              {SECTION_INFO[tab].sources.length > 0 && (
+                <p className="lib-src">
+                  {t("lib_source_label")}:{" "}
+                  {SECTION_INFO[tab].sources.map((s, i) => (
+                    <React.Fragment key={s.url}>
+                      {i > 0 && " · "}
+                      <a href={s.url} target="_blank" rel="noopener noreferrer">
+                        {s.label}
+                      </a>
+                    </React.Fragment>
+                  ))}
+                </p>
+              )}
+            </div>
+          )}
 
           {tab !== "sources" && (
             <div className="lib-grid">
