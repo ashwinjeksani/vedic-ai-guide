@@ -1,0 +1,5 @@
+node_modules/
+dist/
+.env
+.dev-server.pid
+.dev-server.log
