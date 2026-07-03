@@ -15,6 +15,5 @@ public/
 *.db-wal
 *.sqlite
 
-# deployment config (kept local)
+# deployment docs (kept local); render.yaml is tracked for the Render Blueprint
 DEPLOY.md
-render.yaml
