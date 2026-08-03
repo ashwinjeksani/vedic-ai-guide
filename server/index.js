@@ -11,7 +11,7 @@ import {
   me,
   logout,
 } from "./auth.js";
-import { chat, adminListUsers, adminSetStatus, adminGuardLog } from "./routes.js";
+import { chat, chatConfig, adminListUsers, adminSetStatus, adminGuardLog } from "./routes.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -39,6 +39,7 @@ app.post("/api/auth/logout", logout);
 
 // --- gated proxy ---
 app.post("/api/chat", chat);
+app.get("/api/chat/config", chatConfig); // which providers are configured (no secrets)
 
 // --- admin ---
 app.get("/api/admin/users", adminListUsers);

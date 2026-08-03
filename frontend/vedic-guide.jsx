@@ -27,6 +27,33 @@ const LANGUAGES = [
   { id: "zh", label: "Chinese", native: "中文" },
 ];
 
+// Chat history lives ONLY in the browser (localStorage) so it survives a
+// reload — the server never stores conversation content, only counts a
+// request against the daily limit. Capped so a long-lived tab can't grow
+// this without bound.
+const CHAT_HISTORY_KEY = "sanatana.chat";
+const CHAT_HISTORY_MAX = 60; // ~30 exchanges
+
+function loadStoredMessages() {
+  try {
+    const raw = localStorage.getItem(CHAT_HISTORY_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (m) => m && (m.role === "user" || m.role === "assistant") && typeof m.content === "string"
+    );
+  } catch {
+    return [];
+  }
+}
+function saveStoredMessages(messages) {
+  try {
+    localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(messages.slice(-CHAT_HISTORY_MAX)));
+  } catch {
+    /* storage full/unavailable (e.g. private browsing) — history just won't persist */
+  }
+}
+
 // The reply-language instruction is appended to the system prompt on the
 // SERVER (server/prompt.js); the frontend just sends the `lang` id.
 
@@ -103,6 +130,16 @@ const STRINGS = {
     dock_consulting: "consulting the texts…",
     dock_error: "The guide could not be reached. Ask again in a moment.",
     label_you: "You",
+    export_pdf: "Export PDF",
+    export_pdf_title: "Save this conversation as a PDF",
+    export_pdf_subtitle: "A conversation with the guide",
+    export_pdf_generated: "Generated",
+    export_pdf_print: "Save as PDF / Print",
+    export_pdf_print_hint: "In the print dialog, choose Save as PDF as the destination.",
+    export_pdf_blocked: "Allow pop-ups for this site to export the PDF.",
+    model_label: "AI model",
+    clear_chat_title: "Clear this conversation",
+    clear_chat_confirm: "Clear this conversation? It's only stored in this browser and can't be undone.",
 
     // auth
     auth_gate_title: "Register to ask",
@@ -223,6 +260,16 @@ const STRINGS = {
     dock_consulting: "ग्रंथों से परामर्श…",
     dock_error: "मार्गदर्शक तक नहीं पहुँच सके। क्षण भर में पुनः पूछें।",
     label_you: "आप",
+    export_pdf: "PDF निर्यात करें",
+    export_pdf_title: "इस बातचीत को PDF के रूप में सहेजें",
+    export_pdf_subtitle: "मार्गदर्शक के साथ एक बातचीत",
+    export_pdf_generated: "बनाया गया",
+    export_pdf_print: "PDF के रूप में सहेजें / प्रिंट करें",
+    export_pdf_print_hint: "प्रिंट संवाद में, गंतव्य के रूप में \"PDF के रूप में सहेजें\" चुनें।",
+    export_pdf_blocked: "PDF निर्यात करने के लिए इस साइट के लिए पॉप-अप की अनुमति दें।",
+    model_label: "AI मॉडल",
+    clear_chat_title: "इस बातचीत को साफ़ करें",
+    clear_chat_confirm: "क्या इस बातचीत को साफ़ करें? यह केवल इस ब्राउज़र में सहेजी गई है और इसे वापस नहीं लाया जा सकता।",
 
     auth_gate_title: "पूछने के लिए पंजीकरण करें",
     auth_gate_p:
@@ -339,6 +386,16 @@ const STRINGS = {
     dock_consulting: "గ్రంథాలను సంప్రదిస్తోంది…",
     dock_error: "మార్గదర్శినిని చేరలేకపోయాం. క్షణంలో మళ్లీ అడగండి.",
     label_you: "మీరు",
+    export_pdf: "PDF ఎగుమతి చేయండి",
+    export_pdf_title: "ఈ సంభాషణను PDFగా సేవ్ చేయండి",
+    export_pdf_subtitle: "మార్గదర్శితో ఒక సంభాషణ",
+    export_pdf_generated: "రూపొందించబడింది",
+    export_pdf_print: "PDFగా సేవ్ చేయండి / ప్రింట్ చేయండి",
+    export_pdf_print_hint: "ప్రింట్ డైలాగ్‌లో, గమ్యస్థానంగా \"PDFగా సేవ్ చేయండి\" ఎంచుకోండి.",
+    export_pdf_blocked: "PDF ఎగుమతి చేయడానికి ఈ సైట్ కోసం పాప్-అప్‌లను అనుమతించండి.",
+    model_label: "AI మోడల్",
+    clear_chat_title: "ఈ సంభాషణను క్లియర్ చేయండి",
+    clear_chat_confirm: "ఈ సంభాషణను క్లియర్ చేయాలా? ఇది ఈ బ్రౌజర్‌లో మాత్రమే సేవ్ చేయబడింది మరియు దీన్ని వెనక్కి తీసుకోలేరు.",
 
     auth_gate_title: "అడగడానికి నమోదు చేసుకోండి",
     auth_gate_p:
@@ -455,6 +512,16 @@ const STRINGS = {
     dock_consulting: "正在查阅典籍……",
     dock_error: "无法连接向导。请稍后再问。",
     label_you: "你",
+    export_pdf: "导出 PDF",
+    export_pdf_title: "将此对话保存为 PDF",
+    export_pdf_subtitle: "与向导的对话",
+    export_pdf_generated: "生成于",
+    export_pdf_print: "另存为 PDF / 打印",
+    export_pdf_print_hint: "在打印对话框中，选择“另存为 PDF”作为目标。",
+    export_pdf_blocked: "请允许本网站的弹出窗口以导出 PDF。",
+    model_label: "AI 模型",
+    clear_chat_title: "清除此对话",
+    clear_chat_confirm: "清除此对话？它仅保存在此浏览器中，且无法撤销。",
 
     auth_gate_title: "注册后提问",
     auth_gate_p:
@@ -930,6 +997,110 @@ function splitExample(text) {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Export — render the conversation as a clean, printable PDF via    */
+/*  the browser's own print dialog (no extra dependency). Opens a new */
+/*  tab with a self-contained, always-light document and triggers     */
+/*  window.print() so the user picks "Save as PDF".                   */
+/* ------------------------------------------------------------------ */
+
+function escapeHtml(s) {
+  return String(s ?? "").replace(
+    /[&<>"']/g,
+    (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])
+  );
+}
+
+// Plain chat text -> paragraphs, preserving single line breaks within a
+// paragraph and blank-line breaks between paragraphs (messages are plain
+// text today — see the `white-space: pre-wrap` bubble in the live UI).
+function textToParagraphsHtml(text) {
+  return String(text || "")
+    .trim()
+    .split(/\n{2,}/)
+    .map((para) => `<p>${escapeHtml(para).replace(/\n/g, "<br/>")}</p>`)
+    .join("");
+}
+
+function buildChatTranscriptHtml(messages, lang, t) {
+  const generated = new Date().toLocaleString(lang, {
+    year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit",
+  });
+  const inPracticeLabel = IN_PRACTICE_LABELS[lang] || IN_PRACTICE_LABELS.en;
+
+  const turns = messages
+    .map((m) => {
+      if (m.role === "user") {
+        return `<div class="turn user">
+          <div class="who">${escapeHtml(t("label_you"))}</div>
+          <div class="bubble">${textToParagraphsHtml(m.content)}</div>
+        </div>`;
+      }
+      const { body, example } = splitExample(m.content || "");
+      return `<div class="turn guide">
+        <div class="who">Sanātana</div>
+        <div class="bubble">
+          ${textToParagraphsHtml(body)}
+          ${example ? `<div class="example"><strong>${escapeHtml(inPracticeLabel)}</strong>${textToParagraphsHtml(example)}</div>` : ""}
+        </div>
+      </div>`;
+    })
+    .join("\n");
+
+  const title = "Sanātana — A Vedic Guide";
+  const styleTag = `<style>
+    @import url('https://fonts.googleapis.com/css2?family=Marcellus&family=Crimson+Pro:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Noto+Serif+Devanagari:wght@400;600&display=swap');
+    *{box-sizing:border-box}
+    body{margin:0;padding:0;background:#fff;color:#2B2015;font-family:'Crimson Pro',Georgia,'Times New Roman',serif;font-size:16px;line-height:1.6}
+    .wrap{max-width:760px;margin:0 auto;padding:26px 34px 60px}
+    .no-print{position:sticky;top:0;z-index:9;background:#F3EEE0;border-bottom:1px solid #E4D5B0;padding:10px 16px;display:flex;gap:12px;align-items:center;font-size:12.5px;color:#6B5A42}
+    .no-print button{font:inherit;font-weight:600;background:#B0653A;color:#fff;border:none;border-radius:6px;padding:7px 16px;cursor:pointer}
+    .brand{font-family:'IBM Plex Mono',ui-monospace,'SF Mono',Menlo,monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#B0653A;font-weight:700}
+    .om{font-family:'Noto Serif Devanagari',serif;font-size:30px;color:#E8A33D;display:block;margin:2px 0 6px}
+    h1{font-family:'Marcellus',Georgia,serif;font-weight:400;font-size:26px;margin:2px 0 2px;color:#2B2015}
+    .sub{color:#6B5A42;font-size:15px;font-style:italic}
+    .gen{color:#9A8F72;font-size:11.5px;margin-top:6px}
+    hr{border:none;border-top:1px solid #E4D5B0;margin:20px 0}
+    .turn{margin:0 0 20px;break-inside:avoid}
+    .turn .who{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:#B0653A;margin-bottom:5px}
+    .turn.user .who{color:#6B5A42}
+    .turn.user .bubble{background:#F7F2E4;border-radius:6px;padding:10px 14px}
+    .turn.guide .bubble{padding:0 2px}
+    .turn p{margin:0 0 8px}
+    .turn p:last-child{margin-bottom:0}
+    .example{margin-top:10px;background:#FBF3E3;border-left:3px solid #E8A33D;border-radius:0 6px 6px 0;padding:10px 14px}
+    .example strong{display:block;font-family:'Marcellus',Georgia,serif;font-weight:400;font-size:13px;color:#B0653A;margin-bottom:4px}
+    .foot{margin-top:32px;border-top:1px solid #E4D5B0;padding-top:14px;color:#9A8F72;font-size:11px;line-height:1.6}
+    .foot .caution{color:#6B5A42;font-size:12px;margin-bottom:8px;font-style:italic}
+    @media print{
+      .no-print{display:none}
+      .wrap{padding:0 4mm}
+      body{font-size:13px}
+      @page{margin:14mm}
+    }
+  </style>`;
+
+  return [
+    "<!doctype html><html><head><meta charset='utf-8'>",
+    `<title>${escapeHtml(title)}</title>`,
+    styleTag,
+    "</head><body>",
+    `<div class="no-print"><button onclick="window.print()">⤓ ${escapeHtml(t("export_pdf_print"))}</button><span>${escapeHtml(t("export_pdf_print_hint"))}</span></div>`,
+    '<div class="wrap">',
+    `<span class="om">ॐ</span>`,
+    `<div class="brand">Sanātana</div>`,
+    `<h1>${escapeHtml(title)}</h1>`,
+    `<div class="sub">${escapeHtml(t("export_pdf_subtitle"))}</div>`,
+    `<div class="gen">${escapeHtml(t("export_pdf_generated"))}: ${escapeHtml(generated)}</div>`,
+    "<hr/>",
+    turns,
+    `<div class="foot"><div class="caution">${escapeHtml(t("footer_caution"))}</div>${escapeHtml(t("footer_fine"))}</div>`,
+    "</div>",
+    "<scr" + "ipt>window.addEventListener('load',function(){setTimeout(function(){window.focus();window.print();},450);});</scr" + "ipt>",
+    "</body></html>",
+  ].join("\n");
+}
+
+/* ------------------------------------------------------------------ */
 /*  Auth — passkey (WebAuthn) client calls to the backend             */
 /*  These talk to the routes in server/index.js. The browser needs    */
 /*  @simplewebauthn/browser installed in the frontend project.        */
@@ -1064,7 +1235,7 @@ export default function SanatanaGuide() {
   const dockOpenRef = useRef(false);
   const dragRef = useRef(null);
 
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState(loadStoredMessages);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -1079,6 +1250,11 @@ export default function SanatanaGuide() {
 
   // i18n + auth + admin state
   const [lang, setLang] = useState("en");
+  // AI model picker — populated from /api/chat/config with only the providers
+  // this deployment actually has configured (never a choice that would 500).
+  const [provider, setProvider] = useState("anthropic");
+  const [providerOptions, setProviderOptions] = useState([]);
+  const [providerForced, setProviderForced] = useState(null);
   const [user, setUser] = useState(null); // null = signed out
   const [authMode, setAuthMode] = useState("register"); // 'register' | 'login'
   const [authName, setAuthName] = useState("");
@@ -1374,6 +1550,18 @@ export default function SanatanaGuide() {
     }
   }, [messages, loading, dockOpen]);
 
+  // Persist the conversation to localStorage only — never sent to or stored
+  // by the server beyond the single in-flight request needed to answer.
+  useEffect(() => {
+    saveStoredMessages(messages);
+  }, [messages]);
+
+  const clearHistory = () => {
+    if (!window.confirm(t("clear_chat_confirm"))) return;
+    setMessages([]);
+    localStorage.removeItem(CHAT_HISTORY_KEY);
+  };
+
 
   /* ---------------- i18n helper ------------------------------------ */
   const t = (key) => (STRINGS[lang] && STRINGS[lang][key]) || STRINGS.en[key] || key;
@@ -1391,6 +1579,28 @@ export default function SanatanaGuide() {
     return () => {
       alive = false;
     };
+  }, []);
+
+  // Which AI providers are actually configured on this deployment — the model
+  // picker only ever offers options from this list.
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/chat/config", { credentials: "same-origin" })
+      .then((r) => r.json())
+      .then((cfg) => {
+        if (!alive) return;
+        const opts = Array.isArray(cfg.providers) ? cfg.providers : [];
+        setProviderOptions(opts);
+        setProviderForced(cfg.forced || null);
+        if (opts.length && !opts.some((p) => p.id === provider)) {
+          setProvider(opts[0].id);
+        }
+      })
+      .catch(() => {}); // keep the "anthropic" default if this fails
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const doRegister = async () => {
@@ -1485,13 +1695,15 @@ export default function SanatanaGuide() {
     setError(null);
     try {
       // The server owns the system prompt, model, and token limits — the
-      // browser sends only the conversation, the provider, and the language.
+      // browser sends only the conversation, the chosen provider, and the
+      // language. (If the operator forced one via CHAT_PROVIDER, the server
+      // ignores this field and uses that instead.)
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "same-origin",
         body: JSON.stringify({
-          provider: "anthropic",
+          provider,
           lang,
           messages: next.map((m) => ({ role: m.role, content: m.content })),
         }),
@@ -1541,6 +1753,19 @@ export default function SanatanaGuide() {
     }
   };
 
+  // Opens a new tab with a print-ready transcript and triggers Save-as-PDF.
+  const exportChatPDF = () => {
+    if (!messages.length) return;
+    const w = window.open("", "_blank");
+    if (!w) {
+      setError(t("export_pdf_blocked"));
+      return;
+    }
+    w.document.open();
+    w.document.write(buildChatTranscriptHtml(messages, lang, t));
+    w.document.close();
+  };
+
   const tabs = [
     { id: "vedas", label: t("lib_tab_vedas"), tag: "śruti" },
     { id: "upanishads", label: t("lib_tab_upanishads"), tag: "śruti" },
@@ -1571,6 +1796,26 @@ export default function SanatanaGuide() {
       {/* language row */}
       <div className="dock-lang">
         <LangSelect lang={lang} setLang={setLang} label={t("lang_label")} />
+        {messages.length > 0 && (
+          <button
+            className="export-btn"
+            onClick={exportChatPDF}
+            title={t("export_pdf_title")}
+            aria-label={t("export_pdf_title")}
+          >
+            ⤓
+          </button>
+        )}
+        {messages.length > 0 && (
+          <button
+            className="export-btn clear-btn"
+            onClick={clearHistory}
+            title={t("clear_chat_title")}
+            aria-label={t("clear_chat_title")}
+          >
+            ✕
+          </button>
+        )}
       </div>
 
       {/* identity / sign-in row — hidden entirely while AUTH_ENABLED is off */}
@@ -1723,6 +1968,24 @@ export default function SanatanaGuide() {
                   {s.tag}
                 </button>
               ))}
+            </div>
+          )}
+
+          {!providerForced && providerOptions.length > 1 && (
+            <div className="composer-toolbar">
+              <select
+                className="model-select"
+                value={provider}
+                onChange={(e) => setProvider(e.target.value)}
+                title={t("model_label")}
+                aria-label={t("model_label")}
+              >
+                {providerOptions.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.label}
+                  </option>
+                ))}
+              </select>
             </div>
           )}
 
@@ -2065,6 +2328,14 @@ export default function SanatanaGuide() {
         .dock-log::-webkit-scrollbar-thumb { background: rgba(232,163,61,0.25); border-radius: 4px; }
         .dock-chips { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 16px 14px; }
         .dock-chips .chip { font-size: 11.5px; padding: 7px 13px; }
+        /* model picker, docked directly above the composer (like most LLM chat
+           apps put it next to the message box, not in a settings row) */
+        .composer-toolbar {
+          display: flex; align-items: center; gap: 8px;
+          border-top: 1px solid var(--line); padding: 8px 10px 0;
+          background: rgba(11,10,20,0.5);
+        }
+        .composer-toolbar + .dock-input { border-top: none; }
         .dock-input {
           display: flex; gap: 8px; border-top: 1px solid var(--line);
           padding: 10px; background: rgba(11,10,20,0.5);
@@ -2209,8 +2480,29 @@ export default function SanatanaGuide() {
         @media (max-width: 720px) {
           .nav-lang-desktop { display: none; }
         }
-        .dock-lang { display: flex; padding: 10px 16px 0; }
+        .dock-lang { display: flex; align-items: center; padding: 10px 16px 0; }
         .dock-lang .lang-menu { right: auto; left: 0; }
+        .model-select {
+          background: transparent; border: 1px solid var(--line);
+          color: var(--ash); font-family: var(--mono); font-size: 10.5px;
+          border-radius: 999px; padding: 5px 8px; cursor: pointer; max-width: 160px;
+        }
+        .model-select:hover, .model-select:focus { border-color: var(--ember); color: var(--manuscript); outline: none; }
+        .model-select option { background: var(--raised); color: var(--manuscript); }
+
+        /* icon-only, same compact footprint as .dock-min — the tooltip (title/
+           aria-label) carries the meaning, so no text label is needed here */
+        .export-btn {
+          margin-left: auto; width: 26px; height: 26px; display: flex;
+          align-items: center; justify-content: center; flex: none;
+          background: transparent; border: 1px solid var(--line); color: var(--ash);
+          font-size: 14px; line-height: 1; border-radius: 50%; padding: 0; cursor: pointer;
+        }
+        .export-btn:hover { color: var(--ember); border-color: var(--ember); background: var(--ember-soft); }
+        /* the clear button sits right after export — a fixed gap, not another
+           auto margin, so the pair stays grouped at the right edge */
+        .export-btn.clear-btn { margin-left: 6px; font-size: 12px; }
+        .export-btn.clear-btn:hover { color: #E88A6A; border-color: #E88A6A; background: rgba(232,138,106,0.1); }
 
         /* ---------- auth gate ---------- */
         .auth {

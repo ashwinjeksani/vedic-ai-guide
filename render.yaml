@@ -50,3 +50,17 @@ services:
         sync: false
       - key: OPENAI_API_KEY
         sync: false
+      # Optional: force every chat through one provider server-side, ignoring
+      # whatever the client sends. anthropic | openai | custom. Leave unset to
+      # keep the existing default (anthropic).
+      - key: CHAT_PROVIDER
+        sync: false
+      # Optional: any OpenAI-compatible endpoint (LM Studio, Ollama, vLLM) for
+      # a self-hosted / local model. A private inference URL — set it in the
+      # dashboard only, never in this file.
+      - key: CUSTOM_AI_URL
+        sync: false
+      - key: CUSTOM_AI_KEY
+        sync: false # only if your endpoint requires auth
+      - key: CUSTOM_AI_MODEL
+        sync: false # optional — auto-discovered from /v1/models if unset

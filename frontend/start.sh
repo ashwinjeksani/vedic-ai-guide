@@ -30,7 +30,9 @@ fi
 [ -d node_modules ] || { echo "Installing frontend deps..."; npm install; }
 [ -d "$SERVER_DIR/node_modules" ] || { echo "Installing server deps..."; npm --prefix "$SERVER_DIR" install; }
 
-# Load API keys from frontend/.env (ANTHROPIC_API_KEY / OPENAI_API_KEY).
+# Load API keys from frontend/.env (ANTHROPIC_API_KEY / OPENAI_API_KEY /
+# CUSTOM_AI_URL / CUSTOM_AI_KEY / CUSTOM_AI_MODEL / CHAT_PROVIDER). Never
+# committed — see .gitignore.
 if [ -f .env ]; then
   set -a; . ./.env; set +a
 fi
@@ -44,6 +46,10 @@ echo "Starting API server on :$API_PORT ..."
   GUEST_DAILY_LIMIT="${GUEST_DAILY_LIMIT:-10}" \
   ANTHROPIC_API_KEY="${ANTHROPIC_API_KEY:-}" \
   OPENAI_API_KEY="${OPENAI_API_KEY:-}" \
+  CHAT_PROVIDER="${CHAT_PROVIDER:-}" \
+  CUSTOM_AI_URL="${CUSTOM_AI_URL:-}" \
+  CUSTOM_AI_KEY="${CUSTOM_AI_KEY:-}" \
+  CUSTOM_AI_MODEL="${CUSTOM_AI_MODEL:-}" \
   nohup node index.js >"$SERVER_DIR/.api-server.log" 2>&1 & echo $! )  >"$API_PID_FILE"
 cp "$SERVER_DIR/.api-server.log" "$API_LOG_FILE" 2>/dev/null || true
 

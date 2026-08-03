@@ -20,8 +20,10 @@ The app UI lives in [`frontend/vedic-guide.jsx`](./frontend/vedic-guide.jsx). A 
 ## Requirements
 
 - Node.js 18+ (tested on Node 25)
-- An [Anthropic API key](https://console.anthropic.com/settings/keys) for the chat
-  feature. The library UI renders without any key.
+- An API key for the chat feature — [Anthropic](https://console.anthropic.com/settings/keys)
+  (default) or [OpenAI](https://platform.openai.com/api-keys), or point it at your own
+  OpenAI-compatible endpoint (LM Studio, Ollama, ...) instead — see
+  [How the chat works](#how-the-chat-works). The library UI renders without any key.
 
 ## Local development
 
@@ -56,7 +58,17 @@ and attaching a custom domain (important for passkeys).
 
 ## How the chat works
 
-The browser never calls the Anthropic API directly (CORS, and the key must stay
-secret). Both locally (Vite middleware) and in production (`server/routes.js`), the
-frontend posts to `/api/chat`; the server attaches the key and forwards the request.
-Keys never leave the server.
+The browser never calls an AI provider directly (CORS, and keys must stay secret).
+The frontend always posts to `/api/chat`, which `server/routes.js` serves — locally,
+Vite just proxies `/api/*` to that same Express server (see `vite.config.js`), so dev
+and production behave identically. The server attaches the credentials and forwards
+the request; keys never reach the browser.
+
+Three providers are supported, chosen per-request (`anthropic` default, or `openai`)
+or forced server-side for every request via `CHAT_PROVIDER`:
+
+- **Anthropic** / **OpenAI** — the usual hosted APIs (`ANTHROPIC_API_KEY` / `OPENAI_API_KEY`).
+- **custom** — any OpenAI-compatible endpoint, e.g. a local [LM Studio](https://lmstudio.ai)
+  server, Ollama, or vLLM. Set `CUSTOM_AI_URL` (just the host is fine — `/v1` is added
+  automatically) and optionally `CUSTOM_AI_KEY` / `CUSTOM_AI_MODEL` in `.env` (local) or
+  the Render dashboard (production). Never commit real values — see `.env.example`.

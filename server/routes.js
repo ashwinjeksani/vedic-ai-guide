@@ -18,7 +18,67 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 const MODELS = {
   anthropic: "claude-sonnet-5",
   openai: "gpt-4o",
+  // "custom" = any OpenAI-compatible endpoint (LM Studio, Ollama, vLLM...).
+  // No universal default model — CUSTOM_AI_MODEL names it explicitly, or it's
+  // auto-discovered from the endpoint's /models list at call time (below).
+  custom: process.env.CUSTOM_AI_MODEL || null,
 };
+
+// Which providers can serve /api/chat. Actual credentials are read from
+// process.env at call time, never stored here or logged.
+const ALLOWED_PROVIDERS = ["anthropic", "openai", "custom"];
+
+// Operator override: when set, ALWAYS use this provider regardless of what
+// the client requests (e.g. CHAT_PROVIDER=custom to route every chat through
+// a self-hosted model). Unset -> falls back to the client-requested provider
+// (existing behavior), defaulting to anthropic.
+const FORCED_PROVIDER = ALLOWED_PROVIDERS.includes(process.env.CHAT_PROVIDER)
+  ? process.env.CHAT_PROVIDER
+  : null;
+
+// Any OpenAI-compatible endpoint, e.g. http://127.0.0.1:1234 (LM Studio's
+// local server) or a tunneled/reverse-proxied host. Intentionally has NO
+// hardcoded default — a private inference endpoint belongs in .env / the
+// host's environment, never in source. People routinely paste just the host,
+// so normaliseBaseUrl appends /v1 when the URL has no path of its own.
+function normaliseBaseUrl(raw) {
+  const base = String(raw || "").trim().replace(/\/+$/, "");
+  if (!base) return base;
+  try {
+    const u = new URL(base);
+    if (u.pathname === "" || u.pathname === "/") return base + "/v1";
+  } catch {
+    /* not absolute — leave as given */
+  }
+  return base;
+}
+const CUSTOM_AI_URL = normaliseBaseUrl(process.env.CUSTOM_AI_URL);
+// Optional: most local servers (LM Studio, Ollama) don't require auth. Set
+// this only if yours sits behind one (e.g. a reverse proxy with a token).
+const CUSTOM_AI_KEY = process.env.CUSTOM_AI_KEY || "";
+
+// When CUSTOM_AI_MODEL isn't set, ask the endpoint what it serves and use the
+// first chat-capable model. Cached per URL for the server's lifetime so this
+// costs at most one extra request.
+const discoveredCustomModel = { url: null, model: null };
+async function resolveCustomModel() {
+  if (MODELS.custom) return MODELS.custom;
+  if (discoveredCustomModel.url === CUSTOM_AI_URL && discoveredCustomModel.model) {
+    return discoveredCustomModel.model;
+  }
+  const res = await fetch(`${CUSTOM_AI_URL}/models`, {
+    headers: CUSTOM_AI_KEY ? { authorization: `Bearer ${CUSTOM_AI_KEY}` } : {},
+  });
+  if (!res.ok) {
+    throw new Error(`Could not list models at ${CUSTOM_AI_URL}/models (HTTP ${res.status}) — set CUSTOM_AI_MODEL`);
+  }
+  const ids = ((await res.json()).data || []).map((m) => m.id).filter(Boolean);
+  const chat = ids.find((id) => !/embed|rerank|whisper|tts|moderation/i.test(id));
+  if (!chat) throw new Error("That endpoint lists no chat model — set CUSTOM_AI_MODEL");
+  discoveredCustomModel.url = CUSTOM_AI_URL;
+  discoveredCustomModel.model = chat;
+  return chat;
+}
 // Ceiling only — the model stops naturally (end_turn) well before this for a
 // guide whose answers target ~120-220 words. Set high enough that a reply is
 // never cut off mid-sentence. Kept under ~16k so non-streaming stays safe from
@@ -43,6 +103,35 @@ function guestId(req, res) {
     });
   }
   return gid;
+}
+
+// Short, human labels for the model picker. Not sensitive — just which
+// providers are usable, never the credentials themselves.
+const PROVIDER_LABELS = {
+  anthropic: "Claude",
+  openai: "GPT-4o",
+  custom: "Qwen3.5 (Free)",
+};
+
+// Only the providers that actually have credentials/config present. This is
+// what the frontend's model picker renders — never an option that would just
+// fail with a 500 when chosen.
+function configuredProviders() {
+  const out = [];
+  if (process.env.ANTHROPIC_API_KEY) out.push({ id: "anthropic", label: PROVIDER_LABELS.anthropic });
+  // GPT-4o temporarily removed from the picker (still works if requested
+  // directly — this only hides it as a choice). Re-enable by uncommenting:
+  // if (process.env.OPENAI_API_KEY) out.push({ id: "openai", label: PROVIDER_LABELS.openai });
+  if (CUSTOM_AI_URL) out.push({ id: "custom", label: PROVIDER_LABELS.custom });
+  return out;
+}
+
+// GET /api/chat/config — public (no auth): lets the UI show a model picker
+// with only the providers this deployment actually has configured. `forced`
+// mirrors FORCED_PROVIDER so the frontend can hide the picker entirely when
+// the operator has pinned one provider server-side (client choice is moot).
+export function chatConfig(req, res) {
+  res.json({ providers: configuredProviders(), forced: FORCED_PROVIDER });
 }
 
 /* --------------------------- the gated proxy ----------------------------- */
@@ -92,7 +181,10 @@ export async function chat(req, res) {
     }
   }
 
-  const provider = req.body?.provider === "openai" ? "openai" : "anthropic";
+  const requestedProvider = ALLOWED_PROVIDERS.includes(req.body?.provider)
+    ? req.body.provider
+    : "anthropic";
+  const provider = FORCED_PROVIDER || requestedProvider;
   const lang = SUPPORTED_LANGS.includes(req.body?.lang) ? req.body.lang : "en";
 
   // Layer 1: shape and size.
@@ -148,12 +240,32 @@ export async function chat(req, res) {
         messages,
       };
     } else {
-      const key = process.env.OPENAI_API_KEY;
-      if (!key) return res.status(500).json({ error: "OpenAI key not configured." });
-      upstream = "https://api.openai.com/v1/chat/completions";
+      // openai and custom (any OpenAI-compatible endpoint) both speak the
+      // Chat Completions schema — same payload shape, only the upstream URL,
+      // auth, and model differ.
+      let key, model;
+      if (provider === "custom") {
+        if (!CUSTOM_AI_URL) {
+          return res
+            .status(500)
+            .json({ error: "Custom AI endpoint not configured (set CUSTOM_AI_URL)." });
+        }
+        try {
+          model = await resolveCustomModel();
+        } catch (e) {
+          return res.status(500).json({ error: e.message });
+        }
+        upstream = `${CUSTOM_AI_URL}/chat/completions`;
+        key = CUSTOM_AI_KEY; // optional — most local servers don't require one
+      } else {
+        key = process.env.OPENAI_API_KEY;
+        if (!key) return res.status(500).json({ error: "OpenAI key not configured." });
+        upstream = "https://api.openai.com/v1/chat/completions";
+        model = MODELS.openai;
+      }
       headers = {
         "content-type": "application/json",
-        authorization: `Bearer ${key}`,
+        ...(key ? { authorization: `Bearer ${key}` } : {}),
       };
       // Translate Anthropic-shaped request -> OpenAI, so the frontend stays identical.
       const msgs = [{ role: "system", content: system }];
@@ -161,7 +273,7 @@ export async function chat(req, res) {
         msgs.push({ role: m.role, content: m.content });
       }
       payloadOut = {
-        model: MODELS.openai,
+        model,
         max_tokens: MAX_TOKENS,
         messages: msgs,
       };
@@ -188,7 +300,8 @@ export async function chat(req, res) {
       );
     }
 
-    // Normalize both providers to Anthropic's { content: [{type:'text', text}] } shape.
+    // Normalize every provider to Anthropic's { content: [{type:'text', text}] }
+    // shape. openai and custom share the OpenAI response schema.
     let text;
     if (provider === "anthropic") {
       text = (data.content || [])
