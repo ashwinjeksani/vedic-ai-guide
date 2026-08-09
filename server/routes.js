@@ -110,7 +110,7 @@ function guestId(req, res) {
 const PROVIDER_LABELS = {
   anthropic: "Claude",
   openai: "GPT-4o",
-  custom: "Qwen3.5 (Free)",
+  custom: "Qwen3.6 (Free)",
 };
 
 // Only the providers that actually have credentials/config present. This is
