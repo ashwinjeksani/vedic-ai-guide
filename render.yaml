@@ -64,3 +64,5 @@ services:
         sync: false # only if your endpoint requires auth
       - key: CUSTOM_AI_MODEL
         sync: false # optional — auto-discovered from /v1/models if unset
+      - key: CUSTOM_AI_LABEL
+        sync: false # optional — display name in the model picker; defaults to "Custom Model (Free)"

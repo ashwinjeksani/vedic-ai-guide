@@ -106,11 +106,13 @@ function guestId(req, res) {
 }
 
 // Short, human labels for the model picker. Not sensitive — just which
-// providers are usable, never the credentials themselves.
+// providers are usable, never the credentials themselves. CUSTOM_AI_LABEL
+// lets the custom provider's display name change (e.g. after swapping the
+// backing model) without a code change; falls back to a generic label.
 const PROVIDER_LABELS = {
   anthropic: "Claude",
   openai: "GPT-4o",
-  custom: "Qwen3.8-27B (Free)",
+  custom: process.env.CUSTOM_AI_LABEL || "Custom Model (Free)",
 };
 
 // Only the providers that actually have credentials/config present. This is
